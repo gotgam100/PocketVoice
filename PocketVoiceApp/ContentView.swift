@@ -117,7 +117,6 @@ struct ContentView: View {
     @State private var playingPersonID: String?
     @State private var playbackResetWorkItem: DispatchWorkItem?
     @State private var handledAutoplayRequestID: UUID?
-    @State private var draggedPerson: PocketVoicePerson?
     @State private var isShowingAppSettings = false
     @AppStorage("pocketvoice.language") private var languageRaw = AppLanguage.korean.rawValue
 
@@ -206,19 +205,11 @@ struct ContentView: View {
                                 isShowingEditor = true
                             } onDelete: {
                                 deletePerson(person)
-                            } onDragStart: {
-                                draggedPerson = person
-                                return NSItemProvider(object: person.id as NSString)
+                            } onReorder: { person, step in
+                                movePerson(person, by: step)
+                            } onReorderEnd: {
+                                commitVisibleOrder()
                             }
-                            .onDrop(
-                                of: [.text],
-                                delegate: PersonDropDelegate(
-                                    target: person,
-                                    people: $people,
-                                    draggedPerson: $draggedPerson,
-                                    onCommit: commitVisibleOrder
-                                )
-                            )
                             }
 
                             Text(AppText.value(.widgetPrompt, language: languageRaw))
@@ -279,6 +270,17 @@ struct ContentView: View {
     private func reloadPeople() {
         people = PocketVoiceStore.loadPeople()
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    private func movePerson(_ person: PocketVoicePerson, by step: Int) {
+        guard step != 0, let currentIndex = people.firstIndex(of: person) else { return }
+        let targetIndex = min(max(currentIndex + step, 0), people.count - 1)
+        guard targetIndex != currentIndex else { return }
+
+        withAnimation(.spring(response: 0.24, dampingFraction: 0.86)) {
+            let item = people.remove(at: currentIndex)
+            people.insert(item, at: targetIndex)
+        }
     }
 
     private func commitVisibleOrder() {
@@ -383,8 +385,11 @@ private struct PersonRow: View {
     let onPlay: () -> Void
     let onOpen: () -> Void
     let onDelete: () -> Void
-    let onDragStart: () -> NSItemProvider
+    let onReorder: (PocketVoicePerson, Int) -> Void
+    let onReorderEnd: () -> Void
     @State private var horizontalOffset: CGFloat = 0
+    @State private var dragYOffset: CGFloat = 0
+    @State private var lastReorderStep = 0
 
     private let cardYellow = Color(hex: 0xFFD13A)
     private let cardDeepYellow = Color(hex: 0xF2A900)
@@ -443,10 +448,7 @@ private struct PersonRow: View {
                     .foregroundStyle(Color.pocketvoiceInk.opacity(0.54))
                     .frame(width: 34, height: 42)
                     .contentShape(Rectangle())
-                    .onDrag(onDragStart) {
-                        Color.clear
-                            .frame(width: 1, height: 1)
-                    }
+                    .highPriorityGesture(reorderGesture)
             }
             .padding(.vertical, 12)
             .padding(.leading, 14)
@@ -464,7 +466,7 @@ private struct PersonRow: View {
                     .stroke(.white.opacity(0.36), lineWidth: 1)
             }
             .shadow(color: Color(hex: 0xB97B00).opacity(0.22), radius: 18, y: 8)
-            .offset(x: horizontalOffset)
+            .offset(x: horizontalOffset, y: dragYOffset * 0.16)
             .gesture(
                 DragGesture(minimumDistance: 18)
                     .onChanged { value in
@@ -479,6 +481,27 @@ private struct PersonRow: View {
             )
         }
         .clipShape(RoundedRectangle(cornerRadius: 20))
+    }
+
+    private var reorderGesture: some Gesture {
+        DragGesture(minimumDistance: 8)
+            .onChanged { value in
+                guard abs(value.translation.height) >= abs(value.translation.width) else { return }
+                dragYOffset = value.translation.height
+
+                let rowDistance: CGFloat = 86
+                let step = Int((value.translation.height / rowDistance).rounded(.toNearestOrAwayFromZero))
+                guard step != lastReorderStep else { return }
+                onReorder(person, step - lastReorderStep)
+                lastReorderStep = step
+            }
+            .onEnded { _ in
+                withAnimation(.spring(response: 0.22, dampingFraction: 0.9)) {
+                    dragYOffset = 0
+                }
+                lastReorderStep = 0
+                onReorderEnd()
+            }
     }
 }
 
@@ -667,36 +690,6 @@ private struct AppSettingsView: View {
             .shadow(color: Color(hex: 0x1A1A24).opacity(0.06), radius: 16, y: 7)
     }
 }
-private struct PersonDropDelegate: DropDelegate {
-    let target: PocketVoicePerson
-    @Binding var people: [PocketVoicePerson]
-    @Binding var draggedPerson: PocketVoicePerson?
-    let onCommit: () -> Void
-
-    func dropEntered(info: DropInfo) {
-        guard let draggedPerson, draggedPerson != target else {
-            return
-        }
-        guard let from = people.firstIndex(of: draggedPerson),
-              let to = people.firstIndex(of: target) else {
-            return
-        }
-
-        withAnimation(.spring(response: 0.24, dampingFraction: 0.86)) {
-            people.move(
-                fromOffsets: IndexSet(integer: from),
-                toOffset: to > from ? to + 1 : to
-            )
-        }
-    }
-
-    func performDrop(info: DropInfo) -> Bool {
-        draggedPerson = nil
-        onCommit()
-        return true
-    }
-}
-
 private struct PersonThumbnail: View {
     let person: PocketVoicePerson
     let size: CGFloat
