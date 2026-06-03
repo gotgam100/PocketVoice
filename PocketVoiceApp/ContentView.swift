@@ -82,6 +82,8 @@ private enum AppText {
         case (.photoFailed, .english): "Photo load failed"
         case (.photoAdded, .korean): "사진 등록"
         case (.photoAdded, .english): "Photo added"
+        case (.widgetPrompt, .korean): "위젯으로 등록하여 목소리를 들어보세요"
+        case (.widgetPrompt, .english): "Add voices to your widget and listen anytime."
         }
     }
 
@@ -98,6 +100,7 @@ private enum AppText {
         case preview
         case photoFailed
         case photoAdded
+        case widgetPrompt
     }
 }
 
@@ -215,7 +218,7 @@ struct ContentView: View {
                             )
                             }
 
-                            Text("위젯으로 등록하여 목소리를 들어보세요")
+                            Text(AppText.value(.widgetPrompt, language: languageRaw))
                                 .font(PocketVoiceFont.rounded(14, weight: .semibold))
                                 .foregroundStyle(Color.pocketvoiceInk.opacity(0.68))
                                 .multilineTextAlignment(.center)
