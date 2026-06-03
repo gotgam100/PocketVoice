@@ -66,6 +66,8 @@ private enum AppText {
         case (.appInfo, .english): "App Info"
         case (.terms, .korean): "이용약관 및 정책"
         case (.terms, .english): "Terms & Policies"
+        case (.openSource, .korean): "오픈소스 라이선스"
+        case (.openSource, .english): "Open Source Licenses"
         case (.language, .korean): "기본 언어"
         case (.language, .english): "Language"
         case (.name, .korean): "이름"
@@ -92,6 +94,7 @@ private enum AppText {
         case tagline
         case appInfo
         case terms
+        case openSource
         case language
         case name
         case maxDuration
@@ -540,6 +543,11 @@ private struct AppSettingsView: View {
                                 .padding(.leading, 34)
 
                             policyLinkRow
+
+                            Divider()
+                                .padding(.leading, 34)
+
+                            openSourceLinkRow
                         }
                     }
                 }
@@ -598,15 +606,31 @@ private struct AppSettingsView: View {
     }
 
     private var policyLinkRow: some View {
+        linkRow(
+            title: AppText.value(.terms, language: languageRaw),
+            systemImage: "doc.text.fill",
+            url: policyURL
+        )
+    }
+
+    private var openSourceLinkRow: some View {
+        linkRow(
+            title: AppText.value(.openSource, language: languageRaw),
+            systemImage: "curlybraces.square.fill",
+            url: openSourceURL
+        )
+    }
+
+    private func linkRow(title: String, systemImage: String, url: URL) -> some View {
         Button {
-            openURL(policyURL)
+            openURL(url)
         } label: {
             HStack(spacing: 12) {
-                Image(systemName: "doc.text.fill")
+                Image(systemName: systemImage)
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(Color.pocketvoiceBlue)
                     .frame(width: 22)
-                Text(AppText.value(.terms, language: languageRaw))
+                Text(title)
                     .font(PocketVoiceFont.rounded(16, weight: .semibold))
                     .foregroundStyle(Color.pocketvoiceInk)
                 Spacer()
@@ -624,6 +648,14 @@ private struct AppSettingsView: View {
             URL(string: "https://gotgam100.github.io/PocketVoice/en/")!
         } else {
             URL(string: "https://gotgam100.github.io/PocketVoice/")!
+        }
+    }
+
+    private var openSourceURL: URL {
+        if currentLanguage == .english {
+            URL(string: "https://gotgam100.github.io/PocketVoice/en/open-source.html")!
+        } else {
+            URL(string: "https://gotgam100.github.io/PocketVoice/open-source.html")!
         }
     }
 
