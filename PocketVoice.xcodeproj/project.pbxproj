@@ -1,0 +1,554 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		00B8319BA04FDDAA52073503 /* Paperlogy-9Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 19A45234DFF65ABA6FC6BBA0 /* Paperlogy-9Black.ttf */; };
+		1731EB5E625BDA46C51AD488 /* Paperlogy-4Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0DB68F29064D8EA87DDC16D0 /* Paperlogy-4Regular.ttf */; };
+		1D0FA2BAFFD078D8FE83C9AC /* PocketVoiceApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE0C59251108B47EA9D20C6 /* PocketVoiceApp.swift */; };
+		1F93209833673BC6D9D787DA /* PocketVoiceWidgetIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80BD8A5BDC973B05BE3FBC98 /* PocketVoiceWidgetIntents.swift */; };
+		267D18688C0E51D528004D45 /* PocketVoiceShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08FDE1CDB41FB94F5F37C0FC /* PocketVoiceShared.swift */; };
+		2C5D6B8E8FF156F6B4DB4824 /* Paperlogy-5Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F67416F196D2B54588A814B1 /* Paperlogy-5Medium.ttf */; };
+		33BB2CE67C781670A5CEA0F8 /* PocketVoiceWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A3713A6596D3E2682A30DDDE /* PocketVoiceWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3739A96D34B206EAF641C8CA /* ChangwonDangamAsac-Bold_0712.otf in Resources */ = {isa = PBXBuildFile; fileRef = 5F242817266D3C832BCEBEBA /* ChangwonDangamAsac-Bold_0712.otf */; };
+		399435A8BEC66C0BF085F6B4 /* Cafe24Nyangi-B-v1.0.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EA07D135425AE92891BE4200 /* Cafe24Nyangi-B-v1.0.ttf */; };
+		3A110483E24A86BC40180318 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F28390DDCD51AFB0AF4336C /* ContentView.swift */; };
+		3BA41734E77DB11B3D3C7561 /* Paperlogy-1Thin.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1FE1DD7239DBBBB6C34B4CDC /* Paperlogy-1Thin.ttf */; };
+		483CFF63A3F4D08AD549A720 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 03D8E8510061A07B2A55DD9B /* Assets.xcassets */; };
+		4AA88089D90E05E93550B9E7 /* Paperlogy-7Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 16641721D2EE5B69D26212C2 /* Paperlogy-7Bold.ttf */; };
+		4FA18140E3254A27C452130A /* Paperlogy-8ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D0C771ABBD56EEA38C3BD7DE /* Paperlogy-8ExtraBold.ttf */; };
+		54712D19C6443B2963DC7108 /* Paperlogy-7Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 16641721D2EE5B69D26212C2 /* Paperlogy-7Bold.ttf */; };
+		5DF5D4A0AE2574035A190086 /* Paperlogy-2ExtraLight.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FB719E96D3760289663BFE93 /* Paperlogy-2ExtraLight.ttf */; };
+		6FF74CCF69186A03ED5E9140 /* Paperlogy-6SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7E2F2C1DFE5E7A184BF37976 /* Paperlogy-6SemiBold.ttf */; };
+		744429C5A467C01B51DFD58B /* PocketVoiceWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40A5F9EE705A7DF17DFAFBC /* PocketVoiceWidget.swift */; };
+		78367A0A25857EAE78892DA1 /* Paperlogy-4Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0DB68F29064D8EA87DDC16D0 /* Paperlogy-4Regular.ttf */; };
+		7FC54CF55A67E2616398238E /* Paperlogy-3Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0FDAADDF2A7C8CAFD82570E8 /* Paperlogy-3Light.ttf */; };
+		82E1B85F966BE51AD934521F /* Paperlogy-2ExtraLight.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FB719E96D3760289663BFE93 /* Paperlogy-2ExtraLight.ttf */; };
+		89DF7F5282794B521E93F9EF /* Cafe24Nyangi-B-v1.0.otf in Resources */ = {isa = PBXBuildFile; fileRef = E95448F2D18C58BB9DC49D9D /* Cafe24Nyangi-B-v1.0.otf */; };
+		8D9E730B7EA281DE3F21C788 /* PocketVoiceShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08FDE1CDB41FB94F5F37C0FC /* PocketVoiceShared.swift */; };
+		9787ECDF937530A914A9E1D8 /* Paperlogy-3Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0FDAADDF2A7C8CAFD82570E8 /* Paperlogy-3Light.ttf */; };
+		A6B323990B05959A5BDD77B9 /* Paperlogy-5Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F67416F196D2B54588A814B1 /* Paperlogy-5Medium.ttf */; };
+		AB28015EFAD6D83ECB6C5C02 /* Paperlogy-1Thin.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1FE1DD7239DBBBB6C34B4CDC /* Paperlogy-1Thin.ttf */; };
+		ACAE9839C52FCF51576A2BA9 /* Cafe24Nyangi-B-v1.0.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EA07D135425AE92891BE4200 /* Cafe24Nyangi-B-v1.0.ttf */; };
+		B964288F2AE124E7BD768003 /* ChangwonDangamAsac-Bold_0712.otf in Resources */ = {isa = PBXBuildFile; fileRef = 5F242817266D3C832BCEBEBA /* ChangwonDangamAsac-Bold_0712.otf */; };
+		C74FF2F2404A01CB2204A111 /* Paperlogy-8ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D0C771ABBD56EEA38C3BD7DE /* Paperlogy-8ExtraBold.ttf */; };
+		D0955CD562F97245CB172A07 /* Paperlogy-9Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 19A45234DFF65ABA6FC6BBA0 /* Paperlogy-9Black.ttf */; };
+		E55262D4677FCD58BFF23424 /* Paperlogy-6SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7E2F2C1DFE5E7A184BF37976 /* Paperlogy-6SemiBold.ttf */; };
+		F1A43D1ADFF02DE8AA7A1F29 /* Cafe24Nyangi-B-v1.0.otf in Resources */ = {isa = PBXBuildFile; fileRef = E95448F2D18C58BB9DC49D9D /* Cafe24Nyangi-B-v1.0.otf */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		AA76C9D7D95BACF1BF392A3C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B6EC2D776F3A9F4FDCD24EAD /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 62311AAA650C81DB8964CC37;
+			remoteInfo = PocketVoiceWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		251652ED7A666AF59609E9EB /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				33BB2CE67C781670A5CEA0F8 /* PocketVoiceWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		03D8E8510061A07B2A55DD9B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		08FDE1CDB41FB94F5F37C0FC /* PocketVoiceShared.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketVoiceShared.swift; sourceTree = "<group>"; };
+		0A2ADDCC6C813B6E1346DAC8 /* PocketVoiceApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PocketVoiceApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0DB68F29064D8EA87DDC16D0 /* Paperlogy-4Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Paperlogy-4Regular.ttf"; sourceTree = "<group>"; };
+		0FDAADDF2A7C8CAFD82570E8 /* Paperlogy-3Light.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Paperlogy-3Light.ttf"; sourceTree = "<group>"; };
+		16641721D2EE5B69D26212C2 /* Paperlogy-7Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Paperlogy-7Bold.ttf"; sourceTree = "<group>"; };
+		19A45234DFF65ABA6FC6BBA0 /* Paperlogy-9Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Paperlogy-9Black.ttf"; sourceTree = "<group>"; };
+		1FE1DD7239DBBBB6C34B4CDC /* Paperlogy-1Thin.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Paperlogy-1Thin.ttf"; sourceTree = "<group>"; };
+		5F242817266D3C832BCEBEBA /* ChangwonDangamAsac-Bold_0712.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ChangwonDangamAsac-Bold_0712.otf"; sourceTree = "<group>"; };
+		7BE8758F0728D9076FD812E7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		7E2F2C1DFE5E7A184BF37976 /* Paperlogy-6SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Paperlogy-6SemiBold.ttf"; sourceTree = "<group>"; };
+		80BD8A5BDC973B05BE3FBC98 /* PocketVoiceWidgetIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketVoiceWidgetIntents.swift; sourceTree = "<group>"; };
+		8F28390DDCD51AFB0AF4336C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A15CAC61B8DDF10E7CC18245 /* PocketVoiceApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PocketVoiceApp.entitlements; sourceTree = "<group>"; };
+		A3713A6596D3E2682A30DDDE /* PocketVoiceWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PocketVoiceWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A40A5F9EE705A7DF17DFAFBC /* PocketVoiceWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketVoiceWidget.swift; sourceTree = "<group>"; };
+		B3985ED2BB1129BB3307F440 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		D0C771ABBD56EEA38C3BD7DE /* Paperlogy-8ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Paperlogy-8ExtraBold.ttf"; sourceTree = "<group>"; };
+		DDE0C59251108B47EA9D20C6 /* PocketVoiceApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketVoiceApp.swift; sourceTree = "<group>"; };
+		E95448F2D18C58BB9DC49D9D /* Cafe24Nyangi-B-v1.0.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Cafe24Nyangi-B-v1.0.otf"; sourceTree = "<group>"; };
+		EA07D135425AE92891BE4200 /* Cafe24Nyangi-B-v1.0.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Cafe24Nyangi-B-v1.0.ttf"; sourceTree = "<group>"; };
+		F67416F196D2B54588A814B1 /* Paperlogy-5Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Paperlogy-5Medium.ttf"; sourceTree = "<group>"; };
+		FB719E96D3760289663BFE93 /* Paperlogy-2ExtraLight.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Paperlogy-2ExtraLight.ttf"; sourceTree = "<group>"; };
+		FD177EEE080A85C645CD2066 /* PocketVoiceWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PocketVoiceWidgetExtension.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		6FC86EC0436B85377AB37D7F = {
+			isa = PBXGroup;
+			children = (
+				A0A8E1F13F5783157E2F010F /* Fonts */,
+				C83435BDDB37CE6B267B06CD /* PocketVoiceApp */,
+				B3F07F642385EDD04D39C850 /* PocketVoiceWidget */,
+				E2FFED6B29093A6C90BFF280 /* Shared */,
+				7E4C759A7EFDA1CEEC9BCFAB /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		7E4C759A7EFDA1CEEC9BCFAB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0A2ADDCC6C813B6E1346DAC8 /* PocketVoiceApp.app */,
+				A3713A6596D3E2682A30DDDE /* PocketVoiceWidgetExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A0A8E1F13F5783157E2F010F /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				E95448F2D18C58BB9DC49D9D /* Cafe24Nyangi-B-v1.0.otf */,
+				EA07D135425AE92891BE4200 /* Cafe24Nyangi-B-v1.0.ttf */,
+				5F242817266D3C832BCEBEBA /* ChangwonDangamAsac-Bold_0712.otf */,
+				1FE1DD7239DBBBB6C34B4CDC /* Paperlogy-1Thin.ttf */,
+				FB719E96D3760289663BFE93 /* Paperlogy-2ExtraLight.ttf */,
+				0FDAADDF2A7C8CAFD82570E8 /* Paperlogy-3Light.ttf */,
+				0DB68F29064D8EA87DDC16D0 /* Paperlogy-4Regular.ttf */,
+				F67416F196D2B54588A814B1 /* Paperlogy-5Medium.ttf */,
+				7E2F2C1DFE5E7A184BF37976 /* Paperlogy-6SemiBold.ttf */,
+				16641721D2EE5B69D26212C2 /* Paperlogy-7Bold.ttf */,
+				D0C771ABBD56EEA38C3BD7DE /* Paperlogy-8ExtraBold.ttf */,
+				19A45234DFF65ABA6FC6BBA0 /* Paperlogy-9Black.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
+		B3F07F642385EDD04D39C850 /* PocketVoiceWidget */ = {
+			isa = PBXGroup;
+			children = (
+				B3985ED2BB1129BB3307F440 /* Info.plist */,
+				A40A5F9EE705A7DF17DFAFBC /* PocketVoiceWidget.swift */,
+				FD177EEE080A85C645CD2066 /* PocketVoiceWidgetExtension.entitlements */,
+				80BD8A5BDC973B05BE3FBC98 /* PocketVoiceWidgetIntents.swift */,
+			);
+			path = PocketVoiceWidget;
+			sourceTree = "<group>";
+		};
+		C83435BDDB37CE6B267B06CD /* PocketVoiceApp */ = {
+			isa = PBXGroup;
+			children = (
+				03D8E8510061A07B2A55DD9B /* Assets.xcassets */,
+				8F28390DDCD51AFB0AF4336C /* ContentView.swift */,
+				7BE8758F0728D9076FD812E7 /* Info.plist */,
+				A15CAC61B8DDF10E7CC18245 /* PocketVoiceApp.entitlements */,
+				DDE0C59251108B47EA9D20C6 /* PocketVoiceApp.swift */,
+			);
+			path = PocketVoiceApp;
+			sourceTree = "<group>";
+		};
+		E2FFED6B29093A6C90BFF280 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				08FDE1CDB41FB94F5F37C0FC /* PocketVoiceShared.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		62311AAA650C81DB8964CC37 /* PocketVoiceWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 738B21EFA5F00304402C0F1F /* Build configuration list for PBXNativeTarget "PocketVoiceWidgetExtension" */;
+			buildPhases = (
+				BB229A7320BAD35419F59CEA /* Sources */,
+				6655259EC4F2B75BF946C863 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PocketVoiceWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = PocketVoiceWidgetExtension;
+			productReference = A3713A6596D3E2682A30DDDE /* PocketVoiceWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		C447991D08EC111DE76BC116 /* PocketVoiceApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8A80ECD40E509A4315D54195 /* Build configuration list for PBXNativeTarget "PocketVoiceApp" */;
+			buildPhases = (
+				CD45754FB6966F49B3736935 /* Sources */,
+				43F1BF6F954608F2F26062C4 /* Resources */,
+				251652ED7A666AF59609E9EB /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A76E3F08CFBF3B0198E391C9 /* PBXTargetDependency */,
+			);
+			name = PocketVoiceApp;
+			packageProductDependencies = (
+			);
+			productName = PocketVoiceApp;
+			productReference = 0A2ADDCC6C813B6E1346DAC8 /* PocketVoiceApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B6EC2D776F3A9F4FDCD24EAD /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2650;
+				TargetAttributes = {
+					62311AAA650C81DB8964CC37 = {
+						DevelopmentTeam = SB2Z6HL579;
+						ProvisioningStyle = Automatic;
+					};
+					C447991D08EC111DE76BC116 = {
+						DevelopmentTeam = SB2Z6HL579;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = C8FBE55FEDD44E21948A3851 /* Build configuration list for PBXProject "PocketVoice" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 6FC86EC0436B85377AB37D7F;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 7E4C759A7EFDA1CEEC9BCFAB /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C447991D08EC111DE76BC116 /* PocketVoiceApp */,
+				62311AAA650C81DB8964CC37 /* PocketVoiceWidgetExtension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		43F1BF6F954608F2F26062C4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				483CFF63A3F4D08AD549A720 /* Assets.xcassets in Resources */,
+				89DF7F5282794B521E93F9EF /* Cafe24Nyangi-B-v1.0.otf in Resources */,
+				399435A8BEC66C0BF085F6B4 /* Cafe24Nyangi-B-v1.0.ttf in Resources */,
+				3739A96D34B206EAF641C8CA /* ChangwonDangamAsac-Bold_0712.otf in Resources */,
+				AB28015EFAD6D83ECB6C5C02 /* Paperlogy-1Thin.ttf in Resources */,
+				82E1B85F966BE51AD934521F /* Paperlogy-2ExtraLight.ttf in Resources */,
+				9787ECDF937530A914A9E1D8 /* Paperlogy-3Light.ttf in Resources */,
+				1731EB5E625BDA46C51AD488 /* Paperlogy-4Regular.ttf in Resources */,
+				A6B323990B05959A5BDD77B9 /* Paperlogy-5Medium.ttf in Resources */,
+				6FF74CCF69186A03ED5E9140 /* Paperlogy-6SemiBold.ttf in Resources */,
+				54712D19C6443B2963DC7108 /* Paperlogy-7Bold.ttf in Resources */,
+				4FA18140E3254A27C452130A /* Paperlogy-8ExtraBold.ttf in Resources */,
+				00B8319BA04FDDAA52073503 /* Paperlogy-9Black.ttf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6655259EC4F2B75BF946C863 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F1A43D1ADFF02DE8AA7A1F29 /* Cafe24Nyangi-B-v1.0.otf in Resources */,
+				ACAE9839C52FCF51576A2BA9 /* Cafe24Nyangi-B-v1.0.ttf in Resources */,
+				B964288F2AE124E7BD768003 /* ChangwonDangamAsac-Bold_0712.otf in Resources */,
+				3BA41734E77DB11B3D3C7561 /* Paperlogy-1Thin.ttf in Resources */,
+				5DF5D4A0AE2574035A190086 /* Paperlogy-2ExtraLight.ttf in Resources */,
+				7FC54CF55A67E2616398238E /* Paperlogy-3Light.ttf in Resources */,
+				78367A0A25857EAE78892DA1 /* Paperlogy-4Regular.ttf in Resources */,
+				2C5D6B8E8FF156F6B4DB4824 /* Paperlogy-5Medium.ttf in Resources */,
+				E55262D4677FCD58BFF23424 /* Paperlogy-6SemiBold.ttf in Resources */,
+				4AA88089D90E05E93550B9E7 /* Paperlogy-7Bold.ttf in Resources */,
+				C74FF2F2404A01CB2204A111 /* Paperlogy-8ExtraBold.ttf in Resources */,
+				D0955CD562F97245CB172A07 /* Paperlogy-9Black.ttf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		BB229A7320BAD35419F59CEA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8D9E730B7EA281DE3F21C788 /* PocketVoiceShared.swift in Sources */,
+				744429C5A467C01B51DFD58B /* PocketVoiceWidget.swift in Sources */,
+				1F93209833673BC6D9D787DA /* PocketVoiceWidgetIntents.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CD45754FB6966F49B3736935 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3A110483E24A86BC40180318 /* ContentView.swift in Sources */,
+				1D0FA2BAFFD078D8FE83C9AC /* PocketVoiceApp.swift in Sources */,
+				267D18688C0E51D528004D45 /* PocketVoiceShared.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A76E3F08CFBF3B0198E391C9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 62311AAA650C81DB8964CC37 /* PocketVoiceWidgetExtension */;
+			targetProxy = AA76C9D7D95BACF1BF392A3C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		1B27F46C55B19847177E439A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = PocketVoiceWidget/PocketVoiceWidgetExtension.entitlements;
+				INFOPLIST_FILE = PocketVoiceWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.baekmac.pocketvoice.widget;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		24C2A66E3CDED68F9E70A734 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = SB2Z6HL579;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		43F3DC562789FDA4AFC79884 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = SB2Z6HL579;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		46056CA7FDAF58CC322560F6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = PocketVoiceApp/PocketVoiceApp.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = PocketVoiceApp/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.baekmac.pocketvoice;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		695734A5D3489B676A327314 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = PocketVoiceWidget/PocketVoiceWidgetExtension.entitlements;
+				INFOPLIST_FILE = PocketVoiceWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.baekmac.pocketvoice.widget;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		EE7C6860A3906DC1F82620F2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = PocketVoiceApp/PocketVoiceApp.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = PocketVoiceApp/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.baekmac.pocketvoice;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		738B21EFA5F00304402C0F1F /* Build configuration list for PBXNativeTarget "PocketVoiceWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1B27F46C55B19847177E439A /* Debug */,
+				695734A5D3489B676A327314 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8A80ECD40E509A4315D54195 /* Build configuration list for PBXNativeTarget "PocketVoiceApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE7C6860A3906DC1F82620F2 /* Debug */,
+				46056CA7FDAF58CC322560F6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C8FBE55FEDD44E21948A3851 /* Build configuration list for PBXProject "PocketVoice" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				24C2A66E3CDED68F9E70A734 /* Debug */,
+				43F3DC562789FDA4AFC79884 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = B6EC2D776F3A9F4FDCD24EAD /* Project object */;
+}

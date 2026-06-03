@@ -1,0 +1,60 @@
+name: PocketVoice
+options:
+  bundleIdPrefix: com.baekmac
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: SB2Z6HL579
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+targets:
+  PocketVoiceApp:
+    type: application
+    platform: iOS
+    sources:
+      - PocketVoiceApp
+      - Shared
+      - path: Fonts
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.baekmac.pocketvoice
+        INFOPLIST_FILE: PocketVoiceApp/Info.plist
+        CODE_SIGN_ENTITLEMENTS: PocketVoiceApp/PocketVoiceApp.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - target: PocketVoiceWidgetExtension
+  PocketVoiceWidgetExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - PocketVoiceWidget
+      - Shared
+      - path: Fonts
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.baekmac.pocketvoice.widget
+        INFOPLIST_FILE: PocketVoiceWidget/Info.plist
+        CODE_SIGN_ENTITLEMENTS: PocketVoiceWidget/PocketVoiceWidgetExtension.entitlements
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+    dependencies: []
+schemes:
+  PocketVoiceApp:
+    build:
+      targets:
+        PocketVoiceApp: all
+    run:
+      config: Debug
+      executable: PocketVoiceApp
+  PocketVoiceWidgetExtension:
+    build:
+      targets:
+        PocketVoiceWidgetExtension: all
+    run:
+      config: Debug
