@@ -1,3 +1,4 @@
+import ImageIO
 import SwiftUI
 import UIKit
 import WidgetKit
@@ -171,13 +172,12 @@ struct PocketVoiceWidgetView: View {
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
             .clipped()
-            .widgetURL(PocketVoiceShared.homeURL)
         }
     }
 
     private func background(for person: PocketVoicePerson, size: CGSize) -> some View {
         ZStack {
-            if let data = PocketVoiceStore.photoData(for: person), let image = UIImage(data: data) {
+            if let image = widgetImage(for: person, size: size) {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
@@ -194,6 +194,23 @@ struct PocketVoiceWidgetView: View {
         .frame(width: size.width, height: size.height)
         .clipped()
         .overlay(.black.opacity(0.16))
+    }
+
+    private func widgetImage(for person: PocketVoicePerson, size: CGSize) -> UIImage? {
+        guard let data = PocketVoiceStore.photoData(for: person) else { return nil }
+        let maxDimension = max(size.width, size.height, 180) * 2
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else {
+            return UIImage(data: data)
+        }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: Int(maxDimension)
+        ]
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+            return UIImage(data: data)
+        }
+        return UIImage(cgImage: cgImage)
     }
 
     private func overlay(for person: PocketVoicePerson, compact: Bool) -> some View {
