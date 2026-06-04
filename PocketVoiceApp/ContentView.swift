@@ -726,7 +726,7 @@ private struct PersonEditorView: View {
     @State private var emojiText = ""
     @State private var emojiOffset: CGSize = .zero
     @State private var lastEmojiOffset: CGSize = .zero
-    @FocusState private var isEmojiInputFocused: Bool
+    @State private var isShowingEmojiPicker = false
     @State private var status: String
     @State private var isPreviewPlaying = false
     @State private var previewResetWorkItem: DispatchWorkItem?
@@ -847,32 +847,69 @@ private struct PersonEditorView: View {
             .buttonStyle(.plain)
 
             Button {
-                isEmojiInputFocused = true
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
+                    isShowingEmojiPicker.toggle()
+                }
             } label: {
-                Text(visibleEmoji.isEmpty ? "🙂" : visibleEmoji)
-                    .font(.system(size: 24))
-                    .frame(width: 48, height: 48)
-                    .background(Color.white.opacity(0.62), in: Circle())
-                    .overlay(Circle().stroke(.white.opacity(0.58), lineWidth: 1))
+                HStack(spacing: 8) {
+                    Text(visibleEmoji.isEmpty ? "🙂" : visibleEmoji)
+                        .font(.system(size: 18))
+                    Text(text(.emojiAdd))
+                        .font(PocketVoiceFont.rounded(14, weight: .bold))
+                }
+                .foregroundStyle(Color.pocketvoiceInk)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color.white.opacity(0.62), in: Capsule())
+                .overlay(Capsule().stroke(.white.opacity(0.58), lineWidth: 1))
             }
             .buttonStyle(.plain)
 
-            TextField("", text: $emojiText)
-                .focused($isEmojiInputFocused)
-                .textInputAutocapitalization(.never)
-                .disableAutocorrection(true)
-                .frame(width: 1, height: 1)
-                .opacity(0.01)
-                .onChange(of: emojiText) { _, newValue in
-                    emojiText = firstEmoji(from: newValue)
-                    if emojiText.isEmpty {
-                        emojiOffset = .zero
-                        lastEmojiOffset = .zero
-                    }
-                }
+            if isShowingEmojiPicker {
+                emojiPicker
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
+    }
+
+    private var emojiPicker: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.fixed(34), spacing: 8), count: 6), spacing: 8) {
+            ForEach(emojiOptions, id: \.self) { emoji in
+                Button {
+                    emojiText = emoji
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.88)) {
+                        isShowingEmojiPicker = false
+                    }
+                } label: {
+                    Text(emoji)
+                        .font(.system(size: 24))
+                        .frame(width: 34, height: 34)
+                }
+                .buttonStyle(.plain)
+            }
+
+            Button {
+                emojiText = ""
+                emojiOffset = .zero
+                lastEmojiOffset = .zero
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.88)) {
+                    isShowingEmojiPicker = false
+                }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Color.pocketvoiceInk.opacity(0.72))
+                    .frame(width: 34, height: 34)
+                    .background(Color.white.opacity(0.52), in: Circle())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(12)
+        .background(Color.white.opacity(0.54), in: RoundedRectangle(cornerRadius: 18))
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(.white.opacity(0.54), lineWidth: 1))
+        .frame(width: 268)
     }
 
     private var widgetPhotoPreview: some View {
@@ -1021,6 +1058,10 @@ private struct PersonEditorView: View {
             .background(Color.white, in: Capsule())
         }
         .padding(.top, 10)
+    }
+
+    private var emojiOptions: [String] {
+        ["😀", "🥰", "😍", "😘", "😎", "🥳", "😭", "🥹", "😂", "😴", "🤍", "❤️", "🧡", "💛", "💚", "💙", "💜", "⭐️", "✨", "🌈", "🌸", "🌷", "🌻", "🍀", "🎈", "🎁", "🎂", "☕️", "🍓", "🍑", "🐶", "🐱", "🏠", "🎵", "📞", "💬"]
     }
 
     private var photoPreviewSize: CGSize {
