@@ -83,8 +83,8 @@ private enum AppText {
         case (.photoFailed, .english): "Photo load failed"
         case (.photoAdded, .korean): "사진 등록"
         case (.photoAdded, .english): "Photo added"
-        case (.photoAdjust, .korean): "사진 조절"
-        case (.photoAdjust, .english): "Adjust photo"
+        case (.photoAdjust, .korean): "사진꾸미기"
+        case (.photoAdjust, .english): "Decorate photo"
         case (.emojiAdd, .korean): "이모티콘 추가"
         case (.emojiAdd, .english): "Add emoji"
         case (.widgetPreview, .korean): "위젯 미리보기"
@@ -723,10 +723,6 @@ private struct PersonEditorView: View {
     @State private var cropImage: UIImage?
     @State private var isShowingPhotoCropper = false
     @State private var audioFileName: String?
-    @State private var emojiText = ""
-    @State private var emojiOffset: CGSize = .zero
-    @State private var lastEmojiOffset: CGSize = .zero
-    @State private var isShowingEmojiPicker = false
     @State private var status: String
     @State private var isPreviewPlaying = false
     @State private var previewResetWorkItem: DispatchWorkItem?
@@ -845,71 +841,9 @@ private struct PersonEditorView: View {
                 widgetPhotoPreview
             }
             .buttonStyle(.plain)
-
-            Button {
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
-                    isShowingEmojiPicker.toggle()
-                }
-            } label: {
-                HStack(spacing: 8) {
-                    Text(visibleEmoji.isEmpty ? "🙂" : visibleEmoji)
-                        .font(.system(size: 18))
-                    Text(text(.emojiAdd))
-                        .font(PocketVoiceFont.rounded(14, weight: .bold))
-                }
-                .foregroundStyle(Color.pocketvoiceInk)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(Color.white.opacity(0.62), in: Capsule())
-                .overlay(Capsule().stroke(.white.opacity(0.58), lineWidth: 1))
-            }
-            .buttonStyle(.plain)
-
-            if isShowingEmojiPicker {
-                emojiPicker
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
-    }
-
-    private var emojiPicker: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.fixed(34), spacing: 8), count: 6), spacing: 8) {
-            ForEach(emojiOptions, id: \.self) { emoji in
-                Button {
-                    emojiText = emoji
-                    withAnimation(.spring(response: 0.25, dampingFraction: 0.88)) {
-                        isShowingEmojiPicker = false
-                    }
-                } label: {
-                    Text(emoji)
-                        .font(.system(size: 24))
-                        .frame(width: 34, height: 34)
-                }
-                .buttonStyle(.plain)
-            }
-
-            Button {
-                emojiText = ""
-                emojiOffset = .zero
-                lastEmojiOffset = .zero
-                withAnimation(.spring(response: 0.25, dampingFraction: 0.88)) {
-                    isShowingEmojiPicker = false
-                }
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(Color.pocketvoiceInk.opacity(0.72))
-                    .frame(width: 34, height: 34)
-                    .background(Color.white.opacity(0.52), in: Circle())
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(12)
-        .background(Color.white.opacity(0.54), in: RoundedRectangle(cornerRadius: 18))
-        .overlay(RoundedRectangle(cornerRadius: 18).stroke(.white.opacity(0.54), lineWidth: 1))
-        .frame(width: 268)
     }
 
     private var widgetPhotoPreview: some View {
@@ -931,14 +865,6 @@ private struct PersonEditorView: View {
             }
             .frame(width: photoPreviewSize.width, height: photoPreviewSize.height)
 
-            if !visibleEmoji.isEmpty {
-                Text(visibleEmoji)
-                    .font(.system(size: 46))
-                    .shadow(color: .black.opacity(0.18), radius: 6, y: 3)
-                    .offset(emojiOffset)
-                    .gesture(emojiDragGesture)
-            }
-
             VStack(alignment: .leading) {
                 Capsule()
                     .fill(Color.white.opacity(0.94))
@@ -959,6 +885,26 @@ private struct PersonEditorView: View {
         .frame(width: photoPreviewSize.width, height: photoPreviewSize.height)
         .clipShape(RoundedRectangle(cornerRadius: 28))
         .overlay(RoundedRectangle(cornerRadius: 28).stroke(.white.opacity(0.72), lineWidth: 1))
+        .overlay(alignment: .bottomTrailing) {
+            if photoData != nil {
+                Button {
+                    if let photoData, let image = UIImage(data: photoData)?.normalizedForPocketVoice() {
+                        cropImage = image
+                        isShowingPhotoCropper = true
+                    }
+                } label: {
+                    Image(systemName: "wand.and.sparkles")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Color.pocketvoiceRed)
+                        .frame(width: 34, height: 34)
+                        .background(Color.white.opacity(0.96), in: Circle())
+                        .overlay(Circle().stroke(.white.opacity(0.72), lineWidth: 1))
+                        .shadow(color: Color(hex: 0x3A2500).opacity(0.16), radius: 9, y: 4)
+                }
+                .buttonStyle(.plain)
+                .offset(x: 12, y: 12)
+            }
+        }
         .shadow(color: Color(hex: 0x3A2500).opacity(0.16), radius: 20, y: 10)
         .contentShape(RoundedRectangle(cornerRadius: 28))
     }
@@ -1060,43 +1006,8 @@ private struct PersonEditorView: View {
         .padding(.top, 10)
     }
 
-    private var emojiOptions: [String] {
-        ["😀", "🥰", "😍", "😘", "😎", "🥳", "😭", "🥹", "😂", "😴", "🤍", "❤️", "🧡", "💛", "💚", "💙", "💜", "⭐️", "✨", "🌈", "🌸", "🌷", "🌻", "🍀", "🎈", "🎁", "🎂", "☕️", "🍓", "🍑", "🐶", "🐱", "🏠", "🎵", "📞", "💬"]
-    }
-
     private var photoPreviewSize: CGSize {
         CGSize(width: 176, height: 176)
-    }
-
-    private var visibleEmoji: String {
-        firstEmoji(from: emojiText)
-    }
-
-    private var emojiDragGesture: some Gesture {
-        DragGesture()
-            .onChanged { value in
-                emojiOffset = clampedEmojiOffset(
-                    CGSize(width: lastEmojiOffset.width + value.translation.width, height: lastEmojiOffset.height + value.translation.height)
-                )
-            }
-            .onEnded { _ in
-                emojiOffset = clampedEmojiOffset(emojiOffset)
-                lastEmojiOffset = emojiOffset
-            }
-    }
-
-    private func clampedEmojiOffset(_ offset: CGSize) -> CGSize {
-        CGSize(
-            width: min(max(offset.width, -photoPreviewSize.width / 2 + 28), photoPreviewSize.width / 2 - 28),
-            height: min(max(offset.height, -photoPreviewSize.height / 2 + 28), photoPreviewSize.height / 2 - 28)
-        )
-    }
-
-    private func firstEmoji(from value: String) -> String {
-        guard let emoji = value.first(where: { $0.isEmojiLike }) else {
-            return ""
-        }
-        return String(emoji)
     }
 
     private func toggleRecording() {
@@ -1186,47 +1097,10 @@ private struct PersonEditorView: View {
         }
     }
 
-    private func decoratedPhotoData() -> Data? {
-        guard !visibleEmoji.isEmpty,
-              let photoData,
-              let image = UIImage(data: photoData) else {
-            return nil
-        }
-
-        let outputSize = CGSize(width: 1_000, height: 1_000)
-        let previewSize = photoPreviewSize
-        let renderer = UIGraphicsImageRenderer(size: outputSize)
-        return renderer.pngData { context in
-            let targetRect = CGRect(origin: .zero, size: outputSize)
-            image.drawAspectFill(in: targetRect)
-
-            let xRatio = outputSize.width / previewSize.width
-            let yRatio = outputSize.height / previewSize.height
-            let center = CGPoint(
-                x: outputSize.width / 2 + emojiOffset.width * xRatio,
-                y: outputSize.height / 2 + emojiOffset.height * yRatio
-            )
-            let fontSize: CGFloat = 46 * xRatio
-            let attributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: fontSize)
-            ]
-            let attributed = NSAttributedString(string: visibleEmoji, attributes: attributes)
-            let textSize = attributed.size()
-            let textRect = CGRect(
-                x: center.x - textSize.width / 2,
-                y: center.y - textSize.height / 2,
-                width: textSize.width,
-                height: textSize.height
-            )
-            attributed.draw(in: textRect)
-        }
-    }
-
     private func save() {
         do {
             stopPreview()
-            let decoratedPhotoData = decoratedPhotoData() ?? photoData
-            let normalizedPhotoData = decoratedPhotoData.flatMap { normalizedPhotoPNGData(from: $0) ?? $0 }
+            let normalizedPhotoData = photoData.flatMap { normalizedPhotoPNGData(from: $0) ?? $0 }
             let savedPhotoFileName = try normalizedPhotoData.map { try PocketVoiceStore.savePhotoData($0, for: draftID) } ?? person?.photoFileName
             let updated = PocketVoicePerson(
                 id: draftID,
@@ -1280,51 +1154,41 @@ private struct PhotoCropperView: View {
     @State private var lastScale: CGFloat = 1
     @State private var offset: CGSize = .zero
     @State private var lastOffset: CGSize = .zero
+    @State private var stickerOffsets: [Int: CGSize] = [:]
+    @State private var stickerDragStarts: [Int: CGSize] = [:]
 
     private let frameSize: CGFloat = 300
+    private let outputSize = CGSize(width: 1_000, height: 1_000)
+
+    private var stickers: [DecorationSticker] {
+        [
+            DecorationSticker(id: 0, emoji: "✨", size: 33, rotation: -18, base: CGSize(width: -126, height: -220)),
+            DecorationSticker(id: 1, emoji: "🌸", size: 42, rotation: 14, base: CGSize(width: -52, height: -242)),
+            DecorationSticker(id: 2, emoji: "💛", size: 36, rotation: -8, base: CGSize(width: 74, height: -226)),
+            DecorationSticker(id: 3, emoji: "⭐️", size: 30, rotation: 22, base: CGSize(width: 136, height: -180)),
+            DecorationSticker(id: 4, emoji: "🥰", size: 44, rotation: -12, base: CGSize(width: -138, height: 218)),
+            DecorationSticker(id: 5, emoji: "🎈", size: 38, rotation: 20, base: CGSize(width: -58, height: 246)),
+            DecorationSticker(id: 6, emoji: "🌈", size: 46, rotation: -6, base: CGSize(width: 48, height: 222)),
+            DecorationSticker(id: 7, emoji: "🍀", size: 34, rotation: 15, base: CGSize(width: 132, height: 246)),
+            DecorationSticker(id: 8, emoji: "💬", size: 40, rotation: -15, base: CGSize(width: 152, height: -242)),
+            DecorationSticker(id: 9, emoji: "🎵", size: 32, rotation: 18, base: CGSize(width: -160, height: -162))
+        ]
+    }
 
     var body: some View {
         ZStack {
             AppBackgroundImage()
 
-            VStack(spacing: 24) {
-                HStack {
-                    Button(action: onCancel) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(Color.pocketvoiceInk)
-                            .frame(width: 46, height: 46)
-                            .background(Color.white.opacity(0.54), in: Circle())
-                    }
-                    .buttonStyle(.plain)
+            VStack(spacing: 20) {
+                header
 
-                    Spacer()
-
-                    Text(title)
-                        .font(PocketVoiceFont.rounded(18, weight: .bold))
-                        .foregroundStyle(Color.pocketvoiceInk)
-
-                    Spacer()
-
-                    Button {
-                        if let data = croppedPNGData() {
-                            onComplete(data)
-                        }
-                    } label: {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(accent)
-                            .frame(width: 48, height: 48)
-                            .background(Color.white, in: Circle())
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 22)
-                .padding(.top, 18)
-
-                Spacer(minLength: 8)
+                Spacer(minLength: 4)
 
                 ZStack {
+                    ForEach(stickers) { sticker in
+                        stickerView(sticker)
+                    }
+
                     RoundedRectangle(cornerRadius: 30)
                         .fill(Color.white.opacity(0.38))
                         .frame(width: frameSize + 18, height: frameSize + 18)
@@ -1345,10 +1209,85 @@ private struct PhotoCropperView: View {
                             .stroke(.white.opacity(0.92), lineWidth: 3)
                     }
                 }
+                .frame(width: 390, height: 540)
                 .shadow(color: Color(hex: 0x3A2500).opacity(0.16), radius: 24, y: 12)
 
-                Spacer()
+                Spacer(minLength: 8)
             }
+        }
+    }
+
+    private var header: some View {
+        HStack {
+            Button(action: onCancel) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Color.pocketvoiceInk)
+                    .frame(width: 46, height: 46)
+                    .background(Color.white.opacity(0.54), in: Circle())
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            Text(title)
+                .font(PocketVoiceFont.rounded(18, weight: .bold))
+                .foregroundStyle(Color.pocketvoiceInk)
+
+            Spacer()
+
+            Button {
+                if let data = decoratedPNGData() {
+                    onComplete(data)
+                }
+            } label: {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 48, height: 48)
+                    .background(Color.white, in: Circle())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 22)
+        .padding(.top, 18)
+    }
+
+    private func stickerView(_ sticker: DecorationSticker) -> some View {
+        let current = stickerCurrentOffset(sticker)
+        return Text(sticker.emoji)
+            .font(.system(size: sticker.size))
+            .rotationEffect(.degrees(sticker.rotation))
+            .shadow(color: .black.opacity(0.16), radius: 5, y: 3)
+            .offset(current)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        let start = stickerDragStarts[sticker.id] ?? stickerOffsets[sticker.id] ?? .zero
+                        stickerDragStarts[sticker.id] = start
+                        stickerOffsets[sticker.id] = CGSize(
+                            width: start.width + value.translation.width,
+                            height: start.height + value.translation.height
+                        )
+                    }
+                    .onEnded { _ in
+                        stickerDragStarts[sticker.id] = nil
+                    }
+            )
+    }
+
+    private func stickerCurrentOffset(_ sticker: DecorationSticker) -> CGSize {
+        let adjustment = stickerOffsets[sticker.id] ?? .zero
+        return CGSize(width: sticker.base.width + adjustment.width, height: sticker.base.height + adjustment.height)
+    }
+
+    private func placedStickers() -> [(DecorationSticker, CGSize)] {
+        stickers.compactMap { sticker in
+            let current = stickerCurrentOffset(sticker)
+            guard abs(current.width) <= frameSize / 2, abs(current.height) <= frameSize / 2 else {
+                return nil
+            }
+            return (sticker, current)
         }
     }
 
@@ -1398,8 +1337,36 @@ private struct PhotoCropperView: View {
         return CGSize(width: base.width * scale, height: base.height * scale)
     }
 
-    private func croppedPNGData() -> Data? {
-        guard let cgImage = image.cgImage else { return image.pngData() }
+    private func decoratedPNGData() -> Data? {
+        guard let cropped = croppedImage() else { return image.pngData() }
+        let renderer = UIGraphicsImageRenderer(size: outputSize)
+        return renderer.pngData { _ in
+            cropped.draw(in: CGRect(origin: .zero, size: outputSize))
+
+            let ratio = outputSize.width / frameSize
+            for (sticker, stickerOffset) in placedStickers() {
+                let fontSize = sticker.size * ratio
+                let attributes: [NSAttributedString.Key: Any] = [
+                    .font: UIFont.systemFont(ofSize: fontSize)
+                ]
+                let attributed = NSAttributedString(string: sticker.emoji, attributes: attributes)
+                let textSize = attributed.size()
+                let center = CGPoint(
+                    x: outputSize.width / 2 + stickerOffset.width * ratio,
+                    y: outputSize.height / 2 + stickerOffset.height * ratio
+                )
+                let context = UIGraphicsGetCurrentContext()
+                context?.saveGState()
+                context?.translateBy(x: center.x, y: center.y)
+                context?.rotate(by: CGFloat(sticker.rotation * .pi / 180))
+                attributed.draw(in: CGRect(x: -textSize.width / 2, y: -textSize.height / 2, width: textSize.width, height: textSize.height))
+                context?.restoreGState()
+            }
+        }
+    }
+
+    private func croppedImage() -> UIImage? {
+        guard let cgImage = image.cgImage else { return image }
         let displayed = displayedImageSize()
         let originX = ((displayed.width - frameSize) / 2 - offset.width) / displayed.width
         let originY = ((displayed.height - frameSize) / 2 - offset.height) / displayed.height
@@ -1418,12 +1385,20 @@ private struct PhotoCropperView: View {
         ).integral
 
         guard cropRect.width > 1, cropRect.height > 1,
-              let cropped = cgImage.cropping(to: cropRect) else { return image.pngData() }
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 1_000, height: 1_000))
-        return renderer.pngData { _ in
-            UIImage(cgImage: cropped).draw(in: CGRect(x: 0, y: 0, width: 1_000, height: 1_000))
+              let cropped = cgImage.cropping(to: cropRect) else { return image }
+        let renderer = UIGraphicsImageRenderer(size: outputSize)
+        return renderer.image { _ in
+            UIImage(cgImage: cropped).draw(in: CGRect(origin: .zero, size: outputSize))
         }
     }
+}
+
+private struct DecorationSticker: Identifiable {
+    let id: Int
+    let emoji: String
+    let size: CGFloat
+    let rotation: Double
+    let base: CGSize
 }
 
 private extension UIImage {
@@ -1436,13 +1411,6 @@ private extension UIImage {
     }
 }
 
-private extension Character {
-    var isEmojiLike: Bool {
-        unicodeScalars.contains { scalar in
-            scalar.properties.isEmojiPresentation || scalar.properties.isEmoji
-        }
-    }
-}
 
 private extension UIImage {
     func drawAspectFill(in rect: CGRect) {
