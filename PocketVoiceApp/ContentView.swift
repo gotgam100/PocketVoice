@@ -2,6 +2,7 @@ import AVFoundation
 import ImageIO
 import PhotosUI
 import SwiftUI
+import UIKit
 import WidgetKit
 
 private enum PocketVoiceFont {
@@ -82,6 +83,8 @@ private enum AppText {
         case (.photoFailed, .english): "Photo load failed"
         case (.photoAdded, .korean): "사진 등록"
         case (.photoAdded, .english): "Photo added"
+        case (.photoAdjust, .korean): "사진 조절"
+        case (.photoAdjust, .english): "Adjust photo"
         case (.widgetPrompt, .korean): "위젯으로 등록하여 목소리를 들어보세요"
         case (.widgetPrompt, .english): "Add voices to your widget and listen anytime."
         }
@@ -100,6 +103,7 @@ private enum AppText {
         case preview
         case photoFailed
         case photoAdded
+        case photoAdjust
         case widgetPrompt
     }
 }
@@ -710,6 +714,8 @@ private struct PersonEditorView: View {
     @State private var category: PocketVoiceCategory
     @State private var photoItem: PhotosPickerItem?
     @State private var photoData: Data?
+    @State private var cropImage: UIImage?
+    @State private var isShowingPhotoCropper = false
     @State private var audioFileName: String?
     @State private var status: String
     @State private var isPreviewPlaying = false
@@ -751,6 +757,19 @@ private struct PersonEditorView: View {
             .onChange(of: photoItem) { _, newItem in
                 Task {
                     await loadPhoto(from: newItem)
+                }
+            }
+            .sheet(isPresented: $isShowingPhotoCropper) {
+                if let cropImage {
+                    PhotoCropperView(image: cropImage, title: text(.photoAdjust), accent: accent) { data in
+                        photoData = data
+                        status = text(.photoAdded)
+                        isShowingPhotoCropper = false
+                    } onCancel: {
+                        isShowingPhotoCropper = false
+                    }
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.hidden)
                 }
             }
             .onChange(of: recorder.isRecording) { _, isRecording in
@@ -1022,8 +1041,12 @@ private struct PersonEditorView: View {
                 status = text(.photoFailed)
                 return
             }
-            photoData = normalizedPhotoPNGData(from: data) ?? data
-            status = text(.photoAdded)
+            guard let image = UIImage(data: data)?.normalizedForPocketVoice() else {
+                status = text(.photoFailed)
+                return
+            }
+            cropImage = image
+            isShowingPhotoCropper = true
         } catch {
             status = error.localizedDescription
         }
@@ -1072,6 +1095,187 @@ private struct PersonEditorView: View {
         }
 
         return UIImage(cgImage: cgImage).pngData()
+    }
+}
+
+private struct PhotoCropperView: View {
+    let image: UIImage
+    let title: String
+    let accent: Color
+    let onComplete: (Data) -> Void
+    let onCancel: () -> Void
+
+    @State private var scale: CGFloat = 1
+    @State private var lastScale: CGFloat = 1
+    @State private var offset: CGSize = .zero
+    @State private var lastOffset: CGSize = .zero
+
+    private let frameSize: CGFloat = 300
+
+    var body: some View {
+        ZStack {
+            AppBackgroundImage()
+
+            VStack(spacing: 24) {
+                HStack {
+                    Button(action: onCancel) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Color.pocketvoiceInk)
+                            .frame(width: 46, height: 46)
+                            .background(Color.white.opacity(0.54), in: Circle())
+                    }
+                    .buttonStyle(.plain)
+
+                    Spacer()
+
+                    Text(title)
+                        .font(PocketVoiceFont.rounded(18, weight: .bold))
+                        .foregroundStyle(Color.pocketvoiceInk)
+
+                    Spacer()
+
+                    Button {
+                        if let data = croppedPNGData() {
+                            onComplete(data)
+                        }
+                    } label: {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(accent)
+                            .frame(width: 48, height: 48)
+                            .background(Color.white, in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 22)
+                .padding(.top, 18)
+
+                Spacer(minLength: 8)
+
+                ZStack {
+                    RoundedRectangle(cornerRadius: 30)
+                        .fill(Color.white.opacity(0.38))
+                        .frame(width: frameSize + 18, height: frameSize + 18)
+
+                    ZStack {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: frameSize, height: frameSize)
+                            .scaleEffect(scale)
+                            .offset(offset)
+                    }
+                    .frame(width: frameSize, height: frameSize)
+                    .clipShape(RoundedRectangle(cornerRadius: 26))
+                    .gesture(dragGesture.simultaneously(with: magnificationGesture))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 26)
+                            .stroke(.white.opacity(0.92), lineWidth: 3)
+                    }
+                }
+                .shadow(color: Color(hex: 0x3A2500).opacity(0.16), radius: 24, y: 12)
+
+                HStack(spacing: 12) {
+                    Image(systemName: "minus.magnifyingglass")
+                    Slider(value: $scale, in: 1...3)
+                        .tint(accent)
+                        .onChange(of: scale) { _, _ in clampOffset() }
+                    Image(systemName: "plus.magnifyingglass")
+                }
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Color.pocketvoiceInk.opacity(0.76))
+                .padding(.horizontal, 28)
+                .padding(.vertical, 14)
+                .background(Color.white.opacity(0.52), in: Capsule())
+                .padding(.horizontal, 28)
+
+                Spacer()
+            }
+        }
+    }
+
+    private var dragGesture: some Gesture {
+        DragGesture()
+            .onChanged { value in
+                offset = CGSize(width: lastOffset.width + value.translation.width, height: lastOffset.height + value.translation.height)
+                clampOffset()
+            }
+            .onEnded { _ in
+                clampOffset()
+                lastOffset = offset
+            }
+    }
+
+    private var magnificationGesture: some Gesture {
+        MagnificationGesture()
+            .onChanged { value in
+                scale = min(max(lastScale * value, 1), 3)
+                clampOffset()
+            }
+            .onEnded { _ in
+                scale = min(max(scale, 1), 3)
+                lastScale = scale
+                clampOffset()
+                lastOffset = offset
+            }
+    }
+
+    private func clampOffset() {
+        let displayed = displayedImageSize()
+        let maxX = max((displayed.width - frameSize) / 2, 0)
+        let maxY = max((displayed.height - frameSize) / 2, 0)
+        offset.width = min(max(offset.width, -maxX), maxX)
+        offset.height = min(max(offset.height, -maxY), maxY)
+    }
+
+    private func displayedImageSize() -> CGSize {
+        let imageSize = image.size
+        let aspect = imageSize.width / max(imageSize.height, 1)
+        let base: CGSize
+        if aspect > 1 {
+            base = CGSize(width: frameSize * aspect, height: frameSize)
+        } else {
+            base = CGSize(width: frameSize, height: frameSize / max(aspect, 0.01))
+        }
+        return CGSize(width: base.width * scale, height: base.height * scale)
+    }
+
+    private func croppedPNGData() -> Data? {
+        guard let cgImage = image.cgImage else { return image.pngData() }
+        let displayed = displayedImageSize()
+        let originX = ((displayed.width - frameSize) / 2 - offset.width) / displayed.width
+        let originY = ((displayed.height - frameSize) / 2 - offset.height) / displayed.height
+        let widthRatio = frameSize / displayed.width
+        let heightRatio = frameSize / displayed.height
+
+        let pixelWidth = CGFloat(cgImage.width)
+        let pixelHeight = CGFloat(cgImage.height)
+        let x = min(max(originX * pixelWidth, 0), pixelWidth - 1)
+        let y = min(max(originY * pixelHeight, 0), pixelHeight - 1)
+        let cropRect = CGRect(
+            x: x,
+            y: y,
+            width: min(widthRatio * pixelWidth, pixelWidth - x),
+            height: min(heightRatio * pixelHeight, pixelHeight - y)
+        ).integral
+
+        guard cropRect.width > 1, cropRect.height > 1,
+              let cropped = cgImage.cropping(to: cropRect) else { return image.pngData() }
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 1_000, height: 1_000))
+        return renderer.pngData { _ in
+            UIImage(cgImage: cropped).draw(in: CGRect(x: 0, y: 0, width: 1_000, height: 1_000))
+        }
+    }
+}
+
+private extension UIImage {
+    func normalizedForPocketVoice() -> UIImage {
+        guard imageOrientation != .up else { return self }
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { _ in
+            draw(in: CGRect(origin: .zero, size: size))
+        }
     }
 }
 
