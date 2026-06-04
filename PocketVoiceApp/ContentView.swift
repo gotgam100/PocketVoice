@@ -66,8 +66,6 @@ private enum AppText {
         case (.appInfo, .english): "App Info"
         case (.terms, .korean): "이용약관 및 정책"
         case (.terms, .english): "Terms & Policies"
-        case (.openSource, .korean): "오픈소스 라이선스"
-        case (.openSource, .english): "Open Source Licenses"
         case (.language, .korean): "기본 언어"
         case (.language, .english): "Language"
         case (.name, .korean): "이름"
@@ -94,7 +92,6 @@ private enum AppText {
         case tagline
         case appInfo
         case terms
-        case openSource
         case language
         case name
         case maxDuration
@@ -390,6 +387,7 @@ private struct PersonRow: View {
     @State private var horizontalOffset: CGFloat = 0
     @State private var dragYOffset: CGFloat = 0
     @State private var lastReorderStep = 0
+    @State private var isReordering = false
 
     private let cardYellow = Color(hex: 0xFFD13A)
     private let cardDeepYellow = Color(hex: 0xF2A900)
@@ -405,6 +403,7 @@ private struct PersonRow: View {
                     .background(Color(hex: 0xE11D48), in: RoundedRectangle(cornerRadius: 20))
             }
             .buttonStyle(.plain)
+            .opacity(isReordering ? 0 : 1)
 
             HStack(spacing: 13) {
                 HStack(spacing: 13) {
@@ -466,7 +465,7 @@ private struct PersonRow: View {
                     .stroke(.white.opacity(0.36), lineWidth: 1)
             }
             .shadow(color: Color(hex: 0xB97B00).opacity(0.22), radius: 18, y: 8)
-            .offset(x: horizontalOffset, y: dragYOffset * 0.16)
+            .offset(x: horizontalOffset)
             .gesture(
                 DragGesture(minimumDistance: 18)
                     .onChanged { value in
@@ -481,12 +480,15 @@ private struct PersonRow: View {
             )
         }
         .clipShape(RoundedRectangle(cornerRadius: 20))
+        .offset(y: dragYOffset * 0.16)
     }
 
     private var reorderGesture: some Gesture {
         DragGesture(minimumDistance: 8)
             .onChanged { value in
                 guard abs(value.translation.height) >= abs(value.translation.width) else { return }
+                isReordering = true
+                horizontalOffset = 0
                 dragYOffset = value.translation.height
 
                 let rowDistance: CGFloat = 86
@@ -500,6 +502,7 @@ private struct PersonRow: View {
                     dragYOffset = 0
                 }
                 lastReorderStep = 0
+                isReordering = false
                 onReorderEnd()
             }
     }
@@ -566,11 +569,6 @@ private struct AppSettingsView: View {
                                 .padding(.leading, 34)
 
                             policyLinkRow
-
-                            Divider()
-                                .padding(.leading, 34)
-
-                            openSourceLinkRow
                         }
                     }
                 }
@@ -636,14 +634,6 @@ private struct AppSettingsView: View {
         )
     }
 
-    private var openSourceLinkRow: some View {
-        linkRow(
-            title: AppText.value(.openSource, language: languageRaw),
-            systemImage: "curlybraces.square.fill",
-            url: openSourceURL
-        )
-    }
-
     private func linkRow(title: String, systemImage: String, url: URL) -> some View {
         Button {
             openURL(url)
@@ -671,14 +661,6 @@ private struct AppSettingsView: View {
             URL(string: "https://gotgam100.github.io/PocketVoice/en/")!
         } else {
             URL(string: "https://gotgam100.github.io/PocketVoice/")!
-        }
-    }
-
-    private var openSourceURL: URL {
-        if currentLanguage == .english {
-            URL(string: "https://gotgam100.github.io/PocketVoice/en/open-source.html")!
-        } else {
-            URL(string: "https://gotgam100.github.io/PocketVoice/open-source.html")!
         }
     }
 
