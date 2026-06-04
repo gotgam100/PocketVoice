@@ -779,6 +779,8 @@ private struct PersonEditorView: View {
                     } onCancel: {
                         isShowingPhotoCropper = false
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .ignoresSafeArea()
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
                     .zIndex(2)
                 }
@@ -1322,21 +1324,22 @@ private struct PhotoCropperView: View {
             .font(.system(size: sticker.size))
             .rotationEffect(.degrees(sticker.rotation))
             .shadow(color: .black.opacity(0.16), radius: 5, y: 3)
-            .offset(current)
+            .frame(width: 64, height: 64)
             .contentShape(Rectangle())
-            .gesture(
-                LongPressGesture(minimumDuration: 0.22)
-                    .sequenced(before: DragGesture())
+            .offset(current)
+            .onTapGesture {
+                placedStickerOffsets[sticker.id] = .zero
+                paletteDragOffsets[sticker.id] = nil
+            }
+            .highPriorityGesture(
+                DragGesture(minimumDistance: 0)
                     .onChanged { value in
-                        guard case .second(true, let drag?) = value else { return }
-                        paletteDragOffsets[sticker.id] = drag.translation
+                        paletteDragOffsets[sticker.id] = value.translation
                     }
                     .onEnded { value in
-                        if case .second(true, let drag?) = value {
-                            let final = CGSize(width: sticker.base.width + drag.translation.width, height: sticker.base.height + drag.translation.height)
-                            if isInsideFrame(final) {
-                                placedStickerOffsets[sticker.id] = final
-                            }
+                        let final = CGSize(width: sticker.base.width + value.translation.width, height: sticker.base.height + value.translation.height)
+                        if isInsideFrame(final) {
+                            placedStickerOffsets[sticker.id] = final
                         }
                         paletteDragOffsets[sticker.id] = nil
                     }
@@ -1349,10 +1352,11 @@ private struct PhotoCropperView: View {
             .font(.system(size: sticker.size))
             .rotationEffect(.degrees(sticker.rotation))
             .shadow(color: .black.opacity(0.18), radius: 5, y: 3)
-            .offset(current)
+            .frame(width: 72, height: 72)
             .contentShape(Rectangle())
-            .gesture(
-                DragGesture()
+            .offset(current)
+            .highPriorityGesture(
+                DragGesture(minimumDistance: 0)
                     .onChanged { value in
                         let start = stickerDragStarts[sticker.id] ?? current
                         stickerDragStarts[sticker.id] = start
