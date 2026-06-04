@@ -46,7 +46,11 @@ struct PocketVoicePerson: Identifiable, Codable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
-        category = try container.decodeIfPresent(PocketVoiceCategory.self, forKey: .category) ?? .family
+        if let rawCategory = try container.decodeIfPresent(String.self, forKey: .category) {
+            category = PocketVoiceCategory(rawValue: rawCategory) ?? .family
+        } else {
+            category = .family
+        }
         accent = try container.decodeIfPresent(PocketVoiceAccent.self, forKey: .accent) ?? .coral
         photoFileName = try container.decodeIfPresent(String.self, forKey: .photoFileName)
         audioFileName = try container.decodeIfPresent(String.self, forKey: .audioFileName)
@@ -72,7 +76,6 @@ enum PocketVoiceCategory: String, Codable, CaseIterable, Identifiable {
     case partner
     case coworker
     case pet
-    case other
 
     var id: String { rawValue }
 
@@ -83,7 +86,6 @@ enum PocketVoiceCategory: String, Codable, CaseIterable, Identifiable {
         case .partner: "연인"
         case .coworker: "동료"
         case .pet: "반려"
-        case .other: "기타"
         }
     }
 
@@ -94,7 +96,6 @@ enum PocketVoiceCategory: String, Codable, CaseIterable, Identifiable {
         case .partner: "heart.fill"
         case .coworker: "briefcase.fill"
         case .pet: "pawprint.fill"
-        case .other: "sparkles"
         }
     }
 
@@ -105,7 +106,6 @@ enum PocketVoiceCategory: String, Codable, CaseIterable, Identifiable {
         case .partner: .coral
         case .coworker: .lavender
         case .pet: .peach
-        case .other: .lemon
         }
     }
 }

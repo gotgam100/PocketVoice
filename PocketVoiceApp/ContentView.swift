@@ -85,6 +85,8 @@ private enum AppText {
         case (.photoAdded, .english): "Photo added"
         case (.photoAdjust, .korean): "사진 조절"
         case (.photoAdjust, .english): "Adjust photo"
+        case (.emojiAdd, .korean): "이모티콘 추가"
+        case (.emojiAdd, .english): "Add emoji"
         case (.widgetPrompt, .korean): "위젯으로 등록하여 목소리를 들어보세요"
         case (.widgetPrompt, .english): "Add voices to your widget and listen anytime."
         }
@@ -104,6 +106,7 @@ private enum AppText {
         case photoFailed
         case photoAdded
         case photoAdjust
+        case emojiAdd
         case widgetPrompt
     }
 }
@@ -717,6 +720,10 @@ private struct PersonEditorView: View {
     @State private var cropImage: UIImage?
     @State private var isShowingPhotoCropper = false
     @State private var audioFileName: String?
+    @State private var emojiText = ""
+    @State private var emojiOffset: CGSize = .zero
+    @State private var lastEmojiOffset: CGSize = .zero
+    @FocusState private var isEmojiInputFocused: Bool
     @State private var status: String
     @State private var isPreviewPlaying = false
     @State private var previewResetWorkItem: DispatchWorkItem?
@@ -826,40 +833,103 @@ private struct PersonEditorView: View {
     }
 
     private var photoPicker: some View {
-        VStack {
+        VStack(spacing: 12) {
             PhotosPicker(selection: $photoItem, matching: .images, preferredItemEncoding: .compatible) {
-                ZStack(alignment: .bottomTrailing) {
-                    Group {
-                        if let photoData, let image = UIImage(data: photoData) {
-                            Image(uiImage: image)
-                                .resizable()
-                                .scaledToFill()
-                        } else {
-                            RoundedRectangle(cornerRadius: 26)
-                                .fill(Color.white.opacity(0.56))
-                                .overlay {
-                                    Image(systemName: "photo.fill")
-                                        .font(.system(size: 44))
-                                        .foregroundStyle(Color.pocketvoiceMuted)
-                                }
-                        }
-                    }
-                    .frame(width: 176, height: 176)
-                    .clipShape(RoundedRectangle(cornerRadius: 26))
+                widgetPhotoPreview
+            }
+            .buttonStyle(.plain)
 
-                    Image(systemName: "plus")
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(accent)
-                        .frame(width: 46, height: 46)
-                        .background(Color.white, in: Circle())
-                        .overlay(Circle().stroke(.white, lineWidth: 4))
-                        .offset(x: 4, y: 4)
+            Button {
+                isEmojiInputFocused = true
+            } label: {
+                HStack(spacing: 8) {
+                    Text(visibleEmoji.isEmpty ? "🙂" : visibleEmoji)
+                        .font(.system(size: 18))
+                    Text(text(.emojiAdd))
+                        .font(PocketVoiceFont.rounded(14, weight: .bold))
                 }
-                .shadow(color: Color(hex: 0x001A44).opacity(0.12), radius: 18, y: 9)
-                            }
+                .foregroundStyle(Color.pocketvoiceInk)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color.white.opacity(0.62), in: Capsule())
+                .overlay(Capsule().stroke(.white.opacity(0.58), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+
+            TextField("", text: $emojiText)
+                .focused($isEmojiInputFocused)
+                .textInputAutocapitalization(.never)
+                .disableAutocorrection(true)
+                .frame(width: 1, height: 1)
+                .opacity(0.01)
+                .onChange(of: emojiText) { _, newValue in
+                    emojiText = firstEmoji(from: newValue)
+                    if emojiText.isEmpty {
+                        emojiOffset = .zero
+                        lastEmojiOffset = .zero
+                    }
+                }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
+    }
+
+    private var widgetPhotoPreview: some View {
+        ZStack {
+            Group {
+                if let photoData, let image = UIImage(data: photoData) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    RoundedRectangle(cornerRadius: 28)
+                        .fill(Color.white.opacity(0.56))
+                        .overlay {
+                            Image(systemName: "photo.fill")
+                                .font(.system(size: 42))
+                                .foregroundStyle(Color.pocketvoiceMuted)
+                        }
+                }
+            }
+            .frame(width: photoPreviewSize.width, height: photoPreviewSize.height)
+
+            if !visibleEmoji.isEmpty {
+                Text(visibleEmoji)
+                    .font(.system(size: 46))
+                    .shadow(color: .black.opacity(0.18), radius: 6, y: 3)
+                    .offset(emojiOffset)
+                    .gesture(emojiDragGesture)
+            }
+
+            VStack(alignment: .leading) {
+                Text(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? text(.name) : name)
+                    .font(PocketVoiceFont.rounded(17, weight: .bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background(.black.opacity(0.28), in: Capsule())
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Spacer()
+
+                HStack {
+                    Spacer()
+                    Image(systemName: audioFileName == nil ? "mic.slash.fill" : "play.fill")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(Color.pocketvoiceRed)
+                        .frame(width: 48, height: 48)
+                        .background(Color.white.opacity(0.98), in: Circle())
+                        .overlay(Circle().stroke(.white.opacity(0.7), lineWidth: 1))
+                }
+            }
+            .padding(14)
+        }
+        .frame(width: photoPreviewSize.width, height: photoPreviewSize.height)
+        .clipShape(RoundedRectangle(cornerRadius: 28))
+        .overlay(RoundedRectangle(cornerRadius: 28).stroke(.white.opacity(0.72), lineWidth: 1))
+        .shadow(color: Color(hex: 0x3A2500).opacity(0.16), radius: 20, y: 10)
+        .contentShape(RoundedRectangle(cornerRadius: 28))
     }
 
     private var nameField: some View {
@@ -889,32 +959,26 @@ private struct PersonEditorView: View {
     }
 
     private var categoryPicker: some View {
-        VStack(spacing: 10) {
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(48), spacing: 10), count: 3), spacing: 10) {
-                ForEach(PocketVoiceCategory.allCases) { item in
-                    Button {
-                        category = item
-                    } label: {
-                        Image(systemName: item.symbol)
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(category == item ? .white : Color.pocketvoiceInk.opacity(0.62))
-                            .frame(width: 48, height: 48)
-                            .background(
-                                category == item ? accent : Color.white.opacity(0.48),
-                                in: Circle()
-                            )
-                            .overlay {
-                                Circle()
-                                    .stroke(.white.opacity(category == item ? 0.95 : 0.28), lineWidth: category == item ? 3 : 1)
-                            }
-                            .shadow(color: Color.black.opacity(category == item ? 0.18 : 0.08), radius: category == item ? 14 : 5, y: category == item ? 8 : 3)
+        HStack(spacing: 10) {
+            ForEach(PocketVoiceCategory.allCases) { item in
+                Button {
+                    category = item
+                } label: {
+                    Image(systemName: item.symbol)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(category == item ? .white : Color.pocketvoiceInk.opacity(0.62))
+                        .frame(width: 46, height: 46)
+                        .background(category == item ? accent : Color.white.opacity(0.48), in: Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(.white.opacity(category == item ? 0.95 : 0.28), lineWidth: category == item ? 3 : 1)
+                        }
+                        .shadow(color: Color.black.opacity(category == item ? 0.18 : 0.08), radius: category == item ? 14 : 5, y: category == item ? 8 : 3)
                         .accessibilityLabel(item.title)
-                    }
-                    .buttonStyle(.plain)
                 }
+                .buttonStyle(.plain)
             }
         }
-        .frame(width: 164)
         .padding(.vertical, 4)
     }
 
@@ -963,6 +1027,41 @@ private struct PersonEditorView: View {
             .background(Color.white, in: Capsule())
         }
         .padding(.top, 10)
+    }
+
+    private var photoPreviewSize: CGSize {
+        CGSize(width: 300, height: 190)
+    }
+
+    private var visibleEmoji: String {
+        firstEmoji(from: emojiText)
+    }
+
+    private var emojiDragGesture: some Gesture {
+        DragGesture()
+            .onChanged { value in
+                emojiOffset = clampedEmojiOffset(
+                    CGSize(width: lastEmojiOffset.width + value.translation.width, height: lastEmojiOffset.height + value.translation.height)
+                )
+            }
+            .onEnded { _ in
+                emojiOffset = clampedEmojiOffset(emojiOffset)
+                lastEmojiOffset = emojiOffset
+            }
+    }
+
+    private func clampedEmojiOffset(_ offset: CGSize) -> CGSize {
+        CGSize(
+            width: min(max(offset.width, -photoPreviewSize.width / 2 + 28), photoPreviewSize.width / 2 - 28),
+            height: min(max(offset.height, -photoPreviewSize.height / 2 + 28), photoPreviewSize.height / 2 - 28)
+        )
+    }
+
+    private func firstEmoji(from value: String) -> String {
+        guard let emoji = value.first(where: { $0.isEmojiLike }) else {
+            return ""
+        }
+        return String(emoji)
     }
 
     private func toggleRecording() {
@@ -1052,10 +1151,47 @@ private struct PersonEditorView: View {
         }
     }
 
+    private func decoratedPhotoData() -> Data? {
+        guard !visibleEmoji.isEmpty,
+              let photoData,
+              let image = UIImage(data: photoData) else {
+            return nil
+        }
+
+        let outputSize = CGSize(width: 1_200, height: 760)
+        let previewSize = photoPreviewSize
+        let renderer = UIGraphicsImageRenderer(size: outputSize)
+        return renderer.pngData { context in
+            let targetRect = CGRect(origin: .zero, size: outputSize)
+            image.drawAspectFill(in: targetRect)
+
+            let xRatio = outputSize.width / previewSize.width
+            let yRatio = outputSize.height / previewSize.height
+            let center = CGPoint(
+                x: outputSize.width / 2 + emojiOffset.width * xRatio,
+                y: outputSize.height / 2 + emojiOffset.height * yRatio
+            )
+            let fontSize: CGFloat = 184
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: fontSize)
+            ]
+            let attributed = NSAttributedString(string: visibleEmoji, attributes: attributes)
+            let textSize = attributed.size()
+            let textRect = CGRect(
+                x: center.x - textSize.width / 2,
+                y: center.y - textSize.height / 2,
+                width: textSize.width,
+                height: textSize.height
+            )
+            attributed.draw(in: textRect)
+        }
+    }
+
     private func save() {
         do {
             stopPreview()
-            let normalizedPhotoData = photoData.flatMap { normalizedPhotoPNGData(from: $0) ?? $0 }
+            let decoratedPhotoData = decoratedPhotoData() ?? photoData
+            let normalizedPhotoData = decoratedPhotoData.flatMap { normalizedPhotoPNGData(from: $0) ?? $0 }
             let savedPhotoFileName = try normalizedPhotoData.map { try PocketVoiceStore.savePhotoData($0, for: draftID) } ?? person?.photoFileName
             let updated = PocketVoicePerson(
                 id: draftID,
@@ -1276,6 +1412,30 @@ private extension UIImage {
         return renderer.image { _ in
             draw(in: CGRect(origin: .zero, size: size))
         }
+    }
+}
+
+private extension Character {
+    var isEmojiLike: Bool {
+        unicodeScalars.contains { scalar in
+            scalar.properties.isEmojiPresentation || scalar.properties.isEmoji
+        }
+    }
+}
+
+private extension UIImage {
+    func drawAspectFill(in rect: CGRect) {
+        let imageSize = size
+        guard imageSize.width > 0, imageSize.height > 0 else { return }
+        let scale = max(rect.width / imageSize.width, rect.height / imageSize.height)
+        let drawSize = CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
+        let drawRect = CGRect(
+            x: rect.midX - drawSize.width / 2,
+            y: rect.midY - drawSize.height / 2,
+            width: drawSize.width,
+            height: drawSize.height
+        )
+        draw(in: drawRect)
     }
 }
 
