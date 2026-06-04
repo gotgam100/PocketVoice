@@ -258,8 +258,10 @@ struct PocketVoiceWidgetView: View {
         VStack(spacing: 10) {
             Image(systemName: "person.crop.circle.badge.plus")
                 .font(.system(size: 32))
-            Text("위젯에 등록할 인물을 선택해주세요.")
+            Text(widgetEmptyMessage)
                 .font(.custom("Paperlogy-6SemiBold", size: 12))
+                .lineLimit(2)
+                .minimumScaleFactor(0.78)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 18)
         }
@@ -268,6 +270,10 @@ struct PocketVoiceWidgetView: View {
         .containerBackground(for: .widget) {
             widgetBackground
         }
+    }
+
+    private var widgetEmptyMessage: String {
+        PocketVoiceShared.languageRawValue == "en" ? "Select people to add to the widget." : "위젯에 등록할 인물을 선택해주세요."
     }
 
     private var blankTile: some View {

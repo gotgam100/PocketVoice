@@ -162,10 +162,20 @@ enum PocketVoiceAccent: String, Codable, CaseIterable, Identifiable {
 
 enum PocketVoiceShared {
     static let appGroupID = "group.com.baekmac.pocketvoice"
+    static let languageKey = "pocketvoice.language"
     static let logKey = "pocketvoice.logs"
 
     static var sharedDefaults: UserDefaults? {
         UserDefaults(suiteName: appGroupID)
+    }
+
+    static var languageRawValue: String {
+        (sharedDefaults ?? .standard).string(forKey: languageKey) ?? "ko"
+    }
+
+    static func setLanguage(_ rawValue: String) {
+        UserDefaults.standard.set(rawValue, forKey: languageKey)
+        sharedDefaults?.set(rawValue, forKey: languageKey)
     }
 
     static var containerURL: URL? {

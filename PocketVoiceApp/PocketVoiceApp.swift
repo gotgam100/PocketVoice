@@ -46,7 +46,12 @@ struct PocketVoiceApp: App {
     @StateObject private var appModel = PocketVoiceAppModel()
 
     init() {
-        UserDefaults.standard.register(defaults: ["pocketvoice.language": "ko"])
+        UserDefaults.standard.register(defaults: [PocketVoiceShared.languageKey: "ko"])
+        let currentLanguage = UserDefaults.standard.string(forKey: PocketVoiceShared.languageKey) ?? "ko"
+        PocketVoiceShared.sharedDefaults?.register(defaults: [PocketVoiceShared.languageKey: currentLanguage])
+        if PocketVoiceShared.sharedDefaults?.string(forKey: PocketVoiceShared.languageKey) == nil {
+            PocketVoiceShared.sharedDefaults?.set(currentLanguage, forKey: PocketVoiceShared.languageKey)
+        }
     }
 
     var body: some Scene {

@@ -125,7 +125,7 @@ struct ContentView: View {
     @State private var playbackResetWorkItem: DispatchWorkItem?
     @State private var handledAutoplayRequestID: UUID?
     @State private var isShowingAppSettings = false
-    @AppStorage("pocketvoice.language") private var languageRaw = AppLanguage.korean.rawValue
+    @AppStorage(PocketVoiceShared.languageKey) private var languageRaw = AppLanguage.korean.rawValue
 
     var body: some View {
         NavigationStack {
@@ -522,7 +522,7 @@ private struct PersonRow: View {
 private struct AppSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
-    @AppStorage("pocketvoice.language") private var languageRaw = AppLanguage.korean.rawValue
+    @AppStorage(PocketVoiceShared.languageKey) private var languageRaw = AppLanguage.korean.rawValue
 
     private var currentLanguage: AppLanguage {
         AppLanguage(rawValue: languageRaw) ?? .korean
@@ -604,6 +604,8 @@ private struct AppSettingsView: View {
         let isSelected = languageRaw == language.rawValue
         return Button {
             languageRaw = language.rawValue
+            PocketVoiceShared.setLanguage(language.rawValue)
+            WidgetCenter.shared.reloadAllTimelines()
         } label: {
             Text(language.title)
                 .font(PocketVoiceFont.rounded(15, weight: .bold))
@@ -712,7 +714,7 @@ private struct PersonThumbnail: View {
 private struct PersonEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var recorder = VoiceRecorder()
-    @AppStorage("pocketvoice.language") private var languageRaw = AppLanguage.korean.rawValue
+    @AppStorage(PocketVoiceShared.languageKey) private var languageRaw = AppLanguage.korean.rawValue
 
     let person: PocketVoicePerson?
     let onSave: () -> Void
@@ -1668,7 +1670,7 @@ private struct MiniPlayerView: View {
     let isPlaying: Bool
     let onPlayToggle: () -> Void
     let onClose: () -> Void
-    @AppStorage("pocketvoice.language") private var languageRaw = AppLanguage.korean.rawValue
+    @AppStorage(PocketVoiceShared.languageKey) private var languageRaw = AppLanguage.korean.rawValue
 
     private var accent: Color {
         Color(hex: 0x22C55E)
