@@ -1213,16 +1213,26 @@ private struct PhotoCropperView: View {
 
     private var stickers: [DecorationSticker] {
         [
-            DecorationSticker(id: 0, emoji: "✨", size: 33, rotation: -18, base: CGSize(width: -126, height: -220)),
-            DecorationSticker(id: 1, emoji: "🌸", size: 42, rotation: 14, base: CGSize(width: -52, height: -242)),
-            DecorationSticker(id: 2, emoji: "💛", size: 36, rotation: -8, base: CGSize(width: 74, height: -226)),
-            DecorationSticker(id: 3, emoji: "⭐️", size: 30, rotation: 22, base: CGSize(width: 136, height: -180)),
-            DecorationSticker(id: 4, emoji: "🥰", size: 44, rotation: -12, base: CGSize(width: -138, height: 218)),
-            DecorationSticker(id: 5, emoji: "🎈", size: 38, rotation: 20, base: CGSize(width: -58, height: 246)),
-            DecorationSticker(id: 6, emoji: "🌈", size: 46, rotation: -6, base: CGSize(width: 48, height: 222)),
-            DecorationSticker(id: 7, emoji: "🍀", size: 34, rotation: 15, base: CGSize(width: 132, height: 246)),
-            DecorationSticker(id: 8, emoji: "💬", size: 40, rotation: -15, base: CGSize(width: 152, height: -242)),
-            DecorationSticker(id: 9, emoji: "🎵", size: 32, rotation: 18, base: CGSize(width: -160, height: -162))
+            DecorationSticker(id: 0, emoji: "✨", size: 50, rotation: -18, base: CGSize(width: -142, height: -236)),
+            DecorationSticker(id: 1, emoji: "🌸", size: 63, rotation: 14, base: CGSize(width: -52, height: -258)),
+            DecorationSticker(id: 2, emoji: "💛", size: 54, rotation: -8, base: CGSize(width: 78, height: -240)),
+            DecorationSticker(id: 3, emoji: "⭐️", size: 45, rotation: 22, base: CGSize(width: 154, height: -188)),
+            DecorationSticker(id: 4, emoji: "🥰", size: 66, rotation: -12, base: CGSize(width: -144, height: 226)),
+            DecorationSticker(id: 5, emoji: "🎈", size: 57, rotation: 20, base: CGSize(width: -58, height: 262)),
+            DecorationSticker(id: 6, emoji: "🌈", size: 69, rotation: -6, base: CGSize(width: 58, height: 232)),
+            DecorationSticker(id: 7, emoji: "🍀", size: 51, rotation: 15, base: CGSize(width: 144, height: 260)),
+            DecorationSticker(id: 8, emoji: "💬", size: 60, rotation: -15, base: CGSize(width: 160, height: -254)),
+            DecorationSticker(id: 9, emoji: "🎵", size: 48, rotation: 18, base: CGSize(width: -166, height: -160)),
+            DecorationSticker(id: 10, emoji: "❤️", size: 58, rotation: 10, base: CGSize(width: -184, height: -66)),
+            DecorationSticker(id: 11, emoji: "😊", size: 62, rotation: -10, base: CGSize(width: 184, height: -76)),
+            DecorationSticker(id: 12, emoji: "🌷", size: 56, rotation: 18, base: CGSize(width: -184, height: 72)),
+            DecorationSticker(id: 13, emoji: "☀️", size: 61, rotation: -16, base: CGSize(width: 184, height: 70)),
+            DecorationSticker(id: 14, emoji: "🫶", size: 64, rotation: 8, base: CGSize(width: -116, height: -300)),
+            DecorationSticker(id: 15, emoji: "🎀", size: 55, rotation: -20, base: CGSize(width: 124, height: -304)),
+            DecorationSticker(id: 16, emoji: "🍓", size: 57, rotation: 14, base: CGSize(width: -122, height: 308)),
+            DecorationSticker(id: 17, emoji: "🌼", size: 60, rotation: -12, base: CGSize(width: 128, height: 306)),
+            DecorationSticker(id: 18, emoji: "💫", size: 53, rotation: 24, base: CGSize(width: -4, height: -318)),
+            DecorationSticker(id: 19, emoji: "🎧", size: 58, rotation: -8, base: CGSize(width: 2, height: 318))
         ]
     }
 
