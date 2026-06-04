@@ -87,6 +87,8 @@ private enum AppText {
         case (.photoAdjust, .english): "Adjust photo"
         case (.emojiAdd, .korean): "이모티콘 추가"
         case (.emojiAdd, .english): "Add emoji"
+        case (.widgetPreview, .korean): "위젯 미리보기"
+        case (.widgetPreview, .english): "Widget preview"
         case (.widgetPrompt, .korean): "위젯으로 등록하여 목소리를 들어보세요"
         case (.widgetPrompt, .english): "Add voices to your widget and listen anytime."
         }
@@ -107,6 +109,7 @@ private enum AppText {
         case photoAdded
         case photoAdjust
         case emojiAdd
+        case widgetPreview
         case widgetPrompt
     }
 }
@@ -833,7 +836,11 @@ private struct PersonEditorView: View {
     }
 
     private var photoPicker: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
+            Text(text(.widgetPreview))
+                .font(PocketVoiceFont.rounded(12, weight: .bold))
+                .foregroundStyle(Color.pocketvoiceInk.opacity(0.62))
+
             PhotosPicker(selection: $photoItem, matching: .images, preferredItemEncoding: .compatible) {
                 widgetPhotoPreview
             }
@@ -842,17 +849,11 @@ private struct PersonEditorView: View {
             Button {
                 isEmojiInputFocused = true
             } label: {
-                HStack(spacing: 8) {
-                    Text(visibleEmoji.isEmpty ? "🙂" : visibleEmoji)
-                        .font(.system(size: 18))
-                    Text(text(.emojiAdd))
-                        .font(PocketVoiceFont.rounded(14, weight: .bold))
-                }
-                .foregroundStyle(Color.pocketvoiceInk)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(Color.white.opacity(0.62), in: Capsule())
-                .overlay(Capsule().stroke(.white.opacity(0.58), lineWidth: 1))
+                Text(visibleEmoji.isEmpty ? "🙂" : visibleEmoji)
+                    .font(.system(size: 24))
+                    .frame(width: 48, height: 48)
+                    .background(Color.white.opacity(0.62), in: Circle())
+                    .overlay(Circle().stroke(.white.opacity(0.58), lineWidth: 1))
             }
             .buttonStyle(.plain)
 
@@ -902,28 +903,21 @@ private struct PersonEditorView: View {
             }
 
             VStack(alignment: .leading) {
-                Text(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? text(.name) : name)
-                    .font(PocketVoiceFont.rounded(17, weight: .bold))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 7)
-                    .background(.black.opacity(0.28), in: Capsule())
+                Capsule()
+                    .fill(Color.white.opacity(0.94))
+                    .frame(width: 58, height: 18)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 Spacer()
 
                 HStack {
                     Spacer()
-                    Image(systemName: audioFileName == nil ? "mic.slash.fill" : "play.fill")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(Color.pocketvoiceRed)
-                        .frame(width: 48, height: 48)
-                        .background(Color.white.opacity(0.98), in: Circle())
-                        .overlay(Circle().stroke(.white.opacity(0.7), lineWidth: 1))
+                    Circle()
+                        .fill(Color.white.opacity(0.96))
+                        .frame(width: 42, height: 42)
                 }
             }
-            .padding(14)
+            .padding(12)
         }
         .frame(width: photoPreviewSize.width, height: photoPreviewSize.height)
         .clipShape(RoundedRectangle(cornerRadius: 28))
@@ -1030,7 +1024,7 @@ private struct PersonEditorView: View {
     }
 
     private var photoPreviewSize: CGSize {
-        CGSize(width: 300, height: 190)
+        CGSize(width: 176, height: 176)
     }
 
     private var visibleEmoji: String {
@@ -1158,7 +1152,7 @@ private struct PersonEditorView: View {
             return nil
         }
 
-        let outputSize = CGSize(width: 1_200, height: 760)
+        let outputSize = CGSize(width: 1_000, height: 1_000)
         let previewSize = photoPreviewSize
         let renderer = UIGraphicsImageRenderer(size: outputSize)
         return renderer.pngData { context in
@@ -1171,7 +1165,7 @@ private struct PersonEditorView: View {
                 x: outputSize.width / 2 + emojiOffset.width * xRatio,
                 y: outputSize.height / 2 + emojiOffset.height * yRatio
             )
-            let fontSize: CGFloat = 184
+            let fontSize: CGFloat = 46 * xRatio
             let attributes: [NSAttributedString.Key: Any] = [
                 .font: UIFont.systemFont(ofSize: fontSize)
             ]
@@ -1311,20 +1305,6 @@ private struct PhotoCropperView: View {
                     }
                 }
                 .shadow(color: Color(hex: 0x3A2500).opacity(0.16), radius: 24, y: 12)
-
-                HStack(spacing: 12) {
-                    Image(systemName: "minus.magnifyingglass")
-                    Slider(value: $scale, in: 1...3)
-                        .tint(accent)
-                        .onChange(of: scale) { _, _ in clampOffset() }
-                    Image(systemName: "plus.magnifyingglass")
-                }
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(Color.pocketvoiceInk.opacity(0.76))
-                .padding(.horizontal, 28)
-                .padding(.vertical, 14)
-                .background(Color.white.opacity(0.52), in: Capsule())
-                .padding(.horizontal, 28)
 
                 Spacer()
             }
