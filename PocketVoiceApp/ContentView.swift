@@ -990,7 +990,7 @@ private struct PersonEditorView: View {
                     systemName: isPreviewPlaying ? "stop.fill" : "play.fill",
                     color: Color.white,
                     iconColor: accent,
-                    size: 68,
+                    size: 78,
                     action: togglePreview
                 )
                 .disabled(audioFileName == nil && recorder.lastRecordedURL == nil)
