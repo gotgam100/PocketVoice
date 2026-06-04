@@ -858,45 +858,48 @@ private struct PersonEditorView: View {
     }
 
     private var widgetPhotoPreview: some View {
-        ZStack {
-            Group {
-                if let photoData, let image = UIImage(data: photoData) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    RoundedRectangle(cornerRadius: 28)
-                        .fill(Color.white.opacity(0.56))
-                        .overlay {
-                            Image(systemName: "photo.fill")
-                                .font(.system(size: 42))
-                                .foregroundStyle(Color.pocketvoiceMuted)
-                        }
+        VStack(alignment: .trailing, spacing: 8) {
+            ZStack {
+                Group {
+                    if let photoData, let image = UIImage(data: photoData) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        RoundedRectangle(cornerRadius: 28)
+                            .fill(Color.white.opacity(0.56))
+                            .overlay {
+                                Image(systemName: "photo.fill")
+                                    .font(.system(size: 42))
+                                    .foregroundStyle(Color.pocketvoiceMuted)
+                            }
+                    }
                 }
+                .frame(width: photoPreviewSize.width, height: photoPreviewSize.height)
+
+                VStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.white.opacity(0.94))
+                        .frame(width: 58, height: 18)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Spacer()
+
+                    HStack {
+                        Spacer()
+                        Circle()
+                            .fill(Color.white.opacity(0.96))
+                            .frame(width: 42, height: 42)
+                    }
+                }
+                .padding(12)
             }
             .frame(width: photoPreviewSize.width, height: photoPreviewSize.height)
+            .clipShape(RoundedRectangle(cornerRadius: 28))
+            .overlay(RoundedRectangle(cornerRadius: 28).stroke(.white.opacity(0.72), lineWidth: 1))
+            .shadow(color: Color(hex: 0x3A2500).opacity(0.16), radius: 20, y: 10)
+            .contentShape(RoundedRectangle(cornerRadius: 28))
 
-            VStack(alignment: .leading) {
-                Capsule()
-                    .fill(Color.white.opacity(0.94))
-                    .frame(width: 58, height: 18)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                Spacer()
-
-                HStack {
-                    Spacer()
-                    Circle()
-                        .fill(Color.white.opacity(0.96))
-                        .frame(width: 42, height: 42)
-                }
-            }
-            .padding(12)
-        }
-        .frame(width: photoPreviewSize.width, height: photoPreviewSize.height)
-        .clipShape(RoundedRectangle(cornerRadius: 28))
-        .overlay(RoundedRectangle(cornerRadius: 28).stroke(.white.opacity(0.72), lineWidth: 1))
-        .overlay(alignment: .bottomTrailing) {
             if photoData != nil {
                 Button {
                     let editableData = sourcePhotoData ?? photoData
@@ -905,20 +908,19 @@ private struct PersonEditorView: View {
                         isShowingPhotoCropper = true
                     }
                 } label: {
-                    Image(systemName: "wand.and.sparkles")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(Color.pocketvoiceRed)
-                        .frame(width: 34, height: 34)
-                        .background(Color.white.opacity(0.96), in: Circle())
-                        .overlay(Circle().stroke(.white.opacity(0.72), lineWidth: 1))
-                        .shadow(color: Color(hex: 0x3A2500).opacity(0.16), radius: 9, y: 4)
+                    HStack(spacing: 5) {
+                        Image(systemName: "wand.and.sparkles")
+                            .font(.system(size: 12, weight: .bold))
+                        Text(text(.photoAdjust))
+                            .font(PocketVoiceFont.rounded(12, weight: .bold))
+                    }
+                    .foregroundStyle(Color.pocketvoiceRed)
                 }
                 .buttonStyle(.plain)
-                .offset(x: 12, y: 12)
+                .padding(.trailing, 2)
             }
         }
-        .shadow(color: Color(hex: 0x3A2500).opacity(0.16), radius: 20, y: 10)
-        .contentShape(RoundedRectangle(cornerRadius: 28))
+        .frame(width: photoPreviewSize.width)
     }
 
     private var nameField: some View {
