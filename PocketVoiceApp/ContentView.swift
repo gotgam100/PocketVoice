@@ -752,15 +752,9 @@ private struct PersonEditorView: View {
                     }
                     .padding(22)
                 }
-            }
-            .toolbar(.hidden, for: .navigationBar)
-            .onChange(of: photoItem) { _, newItem in
-                Task {
-                    await loadPhoto(from: newItem)
-                }
-            }
-            .sheet(isPresented: $isShowingPhotoCropper) {
-                if let cropImage {
+                .disabled(isShowingPhotoCropper)
+
+                if isShowingPhotoCropper, let cropImage {
                     PhotoCropperView(image: cropImage, title: text(.photoAdjust), accent: accent) { data in
                         photoData = data
                         status = text(.photoAdded)
@@ -768,8 +762,14 @@ private struct PersonEditorView: View {
                     } onCancel: {
                         isShowingPhotoCropper = false
                     }
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.hidden)
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                    .zIndex(2)
+                }
+            }
+            .toolbar(.hidden, for: .navigationBar)
+            .onChange(of: photoItem) { _, newItem in
+                Task {
+                    await loadPhoto(from: newItem)
                 }
             }
             .onChange(of: recorder.isRecording) { _, isRecording in
