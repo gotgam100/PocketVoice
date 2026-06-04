@@ -89,8 +89,8 @@ private enum AppText {
         case (.emojiAdd, .english): "Add emoji"
         case (.widgetPreview, .korean): "위젯 미리보기"
         case (.widgetPreview, .english): "Widget preview"
-        case (.widgetPrompt, .korean): "위젯으로 등록하여 목소리를 들어보세요"
-        case (.widgetPrompt, .english): "Add voices to your widget and listen anytime."
+        case (.widgetPrompt, .korean): "위젯으로 등록하여 목소리를 바로 들어보세요."
+        case (.widgetPrompt, .english): "Add to widget and listen instantly."
         }
     }
 
@@ -220,8 +220,10 @@ struct ContentView: View {
                             }
 
                             Text(AppText.value(.widgetPrompt, language: languageRaw))
-                                .font(PocketVoiceFont.rounded(14, weight: .semibold))
+                                .font(PocketVoiceFont.rounded(13, weight: .semibold))
                                 .foregroundStyle(Color.pocketvoiceInk.opacity(0.68))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.72)
                                 .multilineTextAlignment(.center)
                                 .frame(maxWidth: .infinity, alignment: .center)
                                 .padding(.top, 10)
