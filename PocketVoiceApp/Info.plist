@@ -60,5 +60,7 @@
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<false/>
 	</dict>
+	<key>CFBundleDisplayName</key>
+	<string>Pocket Voice</string>
 </dict>
 </plist>

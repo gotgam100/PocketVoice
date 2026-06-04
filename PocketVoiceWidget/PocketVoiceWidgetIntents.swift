@@ -81,19 +81,19 @@ struct PocketVoicePersonQuery: EntityQuery, EntityStringQuery {
 }
 
 struct PocketVoiceWidgetConfigurationIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource = "Pocket Voice 위젯 설정"
-    static var description = IntentDescription("위젯에 등록할 인물을 선택해주세요.")
+    static var title: LocalizedStringResource = "Pocket Voice widget settings"
+    static var description = IntentDescription("Select people to add to the widget.")
 
-    @Parameter(title: "첫 번째")
+    @Parameter(title: "First")
     var firstPerson: PocketVoicePersonEntity?
 
-    @Parameter(title: "두 번째")
+    @Parameter(title: "Second")
     var secondPerson: PocketVoicePersonEntity?
 
-    @Parameter(title: "세 번째")
+    @Parameter(title: "Third")
     var thirdPerson: PocketVoicePersonEntity?
 
-    @Parameter(title: "네 번째")
+    @Parameter(title: "Fourth")
     var fourthPerson: PocketVoicePersonEntity?
 
     static var parameterSummary: some ParameterSummary {

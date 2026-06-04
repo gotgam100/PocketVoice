@@ -311,7 +311,7 @@ struct PocketVoiceWidget: Widget {
             PocketVoiceWidgetView(entry: entry)
         }
         .configurationDisplayName("Pocket Voice")
-        .description("위젯에 등록할 인물을 선택해주세요.")
+        .description("Select people to add to the widget.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
         .contentMarginsDisabled()
     }

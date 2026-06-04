@@ -114,11 +114,33 @@ private enum AppText {
     }
 }
 
+private enum PersonEditorRoute: Identifiable {
+    case new
+    case edit(PocketVoicePerson)
+
+    var id: String {
+        switch self {
+        case .new:
+            return "new-person"
+        case .edit(let person):
+            return person.id
+        }
+    }
+
+    var person: PocketVoicePerson? {
+        switch self {
+        case .new:
+            return nil
+        case .edit(let person):
+            return person
+        }
+    }
+}
+
 struct ContentView: View {
     @EnvironmentObject private var appModel: PocketVoiceAppModel
     @State private var people = PocketVoiceStore.loadPeople()
-    @State private var isShowingEditor = false
-    @State private var editingPerson: PocketVoicePerson?
+    @State private var editorRoute: PersonEditorRoute?
     @State private var status = ""
     @State private var isPlaying = false
     @State private var playingPersonID: String?
@@ -144,8 +166,8 @@ struct ContentView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
-            .sheet(isPresented: $isShowingEditor) {
-                PersonEditorView(person: editingPerson) {
+            .sheet(item: $editorRoute) { route in
+                PersonEditorView(person: route.person) {
                     reloadPeople()
                 }
             }
@@ -208,8 +230,7 @@ struct ContentView: View {
                             PersonRow(person: person, isPlaying: playingPersonID == person.id) {
                                 toggleListPlayback(person)
                             } onOpen: {
-                                editingPerson = person
-                                isShowingEditor = true
+                                editorRoute = .edit(person)
                             } onDelete: {
                                 deletePerson(person)
                             } onReorder: { person, step in
@@ -244,8 +265,7 @@ struct ContentView: View {
                     .overlay(Capsule().stroke(.white.opacity(0.58), lineWidth: 1))
 
                 Button {
-                    editingPerson = nil
-                    isShowingEditor = true
+                    editorRoute = .new
                 } label: {
                     Image(systemName: "plus")
                         .font(.system(size: 24, weight: .bold))
@@ -1598,10 +1618,14 @@ private final class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDe
 
         let session = AVAudioSession.sharedInstance()
         try session.setActive(false, options: [.notifyOthersOnDeactivation])
-        try session.setCategory(.record, mode: .measurement, options: [])
+        try session.setCategory(.record, mode: .default, options: [])
         try session.setPreferredSampleRate(48_000)
         try session.setPreferredIOBufferDuration(0.02)
         try session.setActive(true)
+
+        if let builtInMic = session.availableInputs?.first(where: { $0.portType == .builtInMic }) {
+            try? session.setPreferredInput(builtInMic)
+        }
 
         let settings: [String: Any] = [
             AVFormatIDKey: kAudioFormatMPEG4AAC,
