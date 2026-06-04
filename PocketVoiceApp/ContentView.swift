@@ -386,7 +386,6 @@ private struct PersonRow: View {
     let onReorderEnd: () -> Void
     @State private var horizontalOffset: CGFloat = 0
     @State private var dragYOffset: CGFloat = 0
-    @State private var lastReorderStep = 0
     @State private var isReordering = false
 
     private let cardYellow = Color(hex: 0xFFD13A)
@@ -490,20 +489,20 @@ private struct PersonRow: View {
                 isReordering = true
                 horizontalOffset = 0
                 dragYOffset = value.translation.height
-
+            }
+            .onEnded { value in
                 let rowDistance: CGFloat = 86
                 let step = Int((value.translation.height / rowDistance).rounded(.toNearestOrAwayFromZero))
-                guard step != lastReorderStep else { return }
-                onReorder(person, step - lastReorderStep)
-                lastReorderStep = step
-            }
-            .onEnded { _ in
+
                 withAnimation(.spring(response: 0.22, dampingFraction: 0.9)) {
                     dragYOffset = 0
                 }
-                lastReorderStep = 0
                 isReordering = false
-                onReorderEnd()
+
+                if step != 0 {
+                    onReorder(person, step)
+                    onReorderEnd()
+                }
             }
     }
 }
