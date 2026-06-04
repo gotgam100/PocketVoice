@@ -165,14 +165,11 @@ struct PocketVoiceWidgetView: View {
         GeometryReader { proxy in
             ZStack {
                 background(for: person, size: proxy.size)
-                Link(destination: PocketVoiceShared.homeURL) {
-                    Color.clear
-                        .frame(width: proxy.size.width, height: proxy.size.height)
-                }
                 overlay(for: person, compact: compact)
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
             .clipped()
+            .widgetURL(PocketVoiceShared.homeURL)
         }
     }
 
@@ -231,10 +228,10 @@ struct PocketVoiceWidgetView: View {
     private func playIcon(for person: PocketVoicePerson, compact: Bool) -> some View {
         Image(systemName: person.hasAudio ? "play.fill" : "mic.slash.fill")
             .font(compact ? .caption : (family == .systemMedium ? .headline : .headline))
-            .foregroundStyle(Color(hex: person.category.accent.hex))
+            .foregroundStyle(person.hasAudio ? Color(hex: 0xEF2B24) : Color(hex: 0xEF2B24).opacity(0.58))
             .frame(width: compact ? 36 : (family == .systemMedium ? 46 : 42), height: compact ? 36 : (family == .systemMedium ? 46 : 42))
-            .background(Color(hex: 0xF6F3EC).opacity(person.hasAudio ? 0.96 : 0.62), in: Circle())
-            .overlay(Circle().stroke(.white.opacity(0.42), lineWidth: 1))
+            .background(.white.opacity(person.hasAudio ? 0.98 : 0.7), in: Circle())
+            .overlay(Circle().stroke(.white.opacity(0.72), lineWidth: 1))
             .accessibilityLabel(person.hasAudio ? "재생" : "녹음 필요")
     }
 
