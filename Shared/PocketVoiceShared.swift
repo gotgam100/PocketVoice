@@ -7,6 +7,8 @@ struct PocketVoicePerson: Identifiable, Codable, Equatable {
     var category: PocketVoiceCategory
     var accent: PocketVoiceAccent
     var photoFileName: String?
+    var sourcePhotoFileName: String?
+    var photoDecoration: PocketVoicePhotoDecoration?
     var audioFileName: String?
     var createdAt: Date
     var sortOrder: Int
@@ -17,6 +19,8 @@ struct PocketVoicePerson: Identifiable, Codable, Equatable {
         category: PocketVoiceCategory = .family,
         accent: PocketVoiceAccent = .coral,
         photoFileName: String? = nil,
+        sourcePhotoFileName: String? = nil,
+        photoDecoration: PocketVoicePhotoDecoration? = nil,
         audioFileName: String? = nil,
         createdAt: Date = Date(),
         sortOrder: Int = 0
@@ -26,6 +30,8 @@ struct PocketVoicePerson: Identifiable, Codable, Equatable {
         self.category = category
         self.accent = accent
         self.photoFileName = photoFileName
+        self.sourcePhotoFileName = sourcePhotoFileName
+        self.photoDecoration = photoDecoration
         self.audioFileName = audioFileName
         self.createdAt = createdAt
         self.sortOrder = sortOrder
@@ -37,6 +43,8 @@ struct PocketVoicePerson: Identifiable, Codable, Equatable {
         case category
         case accent
         case photoFileName
+        case sourcePhotoFileName
+        case photoDecoration
         case audioFileName
         case createdAt
         case sortOrder
@@ -53,6 +61,8 @@ struct PocketVoicePerson: Identifiable, Codable, Equatable {
         }
         accent = try container.decodeIfPresent(PocketVoiceAccent.self, forKey: .accent) ?? .coral
         photoFileName = try container.decodeIfPresent(String.self, forKey: .photoFileName)
+        sourcePhotoFileName = try container.decodeIfPresent(String.self, forKey: .sourcePhotoFileName)
+        photoDecoration = try container.decodeIfPresent(PocketVoicePhotoDecoration.self, forKey: .photoDecoration)
         audioFileName = try container.decodeIfPresent(String.self, forKey: .audioFileName)
         createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
         sortOrder = try container.decodeIfPresent(Int.self, forKey: .sortOrder) ?? 0
@@ -68,6 +78,24 @@ struct PocketVoicePerson: Identifiable, Codable, Equatable {
         }
         return FileManager.default.fileExists(atPath: PocketVoiceStore.fileURL(audioFileName).path)
     }
+}
+
+struct PocketVoicePhotoDecoration: Codable, Equatable {
+    var scale: Double
+    var offsetWidth: Double
+    var offsetHeight: Double
+    var stickers: [PocketVoicePhotoSticker]
+
+    static let empty = PocketVoicePhotoDecoration(scale: 1, offsetWidth: 0, offsetHeight: 0, stickers: [])
+}
+
+struct PocketVoicePhotoSticker: Codable, Equatable, Identifiable {
+    var id: Int
+    var emoji: String
+    var size: Double
+    var rotation: Double
+    var offsetWidth: Double
+    var offsetHeight: Double
 }
 
 enum PocketVoiceCategory: String, Codable, CaseIterable, Identifiable {
@@ -255,6 +283,7 @@ enum PocketVoiceStore {
         people.removeAll { $0.id == person.id }
         try savePeople(people)
         try removeFile(named: person.photoFileName)
+        try removeFile(named: person.sourcePhotoFileName)
         try removeFile(named: person.audioFileName)
     }
 
@@ -271,8 +300,15 @@ enum PocketVoiceStore {
     }
 
     static func savePhotoData(_ data: Data, for personID: String) throws -> String {
+        try saveImageData(data, fileName: "photo-\(personID).png")
+    }
+
+    static func saveSourcePhotoData(_ data: Data, for personID: String) throws -> String {
+        try saveImageData(data, fileName: "photo-source-\(personID).png")
+    }
+
+    private static func saveImageData(_ data: Data, fileName: String) throws -> String {
         try ensureContainerExists()
-        let fileName = "photo-\(personID).png"
         try data.write(to: fileURL(fileName), options: [.atomic])
         return fileName
     }
@@ -283,6 +319,11 @@ enum PocketVoiceStore {
 
     static func audioURL(for personID: String) -> URL {
         fileURL(audioFileName(for: personID))
+    }
+
+    static func sourcePhotoData(for person: PocketVoicePerson) -> Data? {
+        guard let sourcePhotoFileName = person.sourcePhotoFileName else { return nil }
+        return try? Data(contentsOf: fileURL(sourcePhotoFileName))
     }
 
     static func photoData(for person: PocketVoicePerson) -> Data? {

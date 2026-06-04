@@ -720,6 +720,8 @@ private struct PersonEditorView: View {
     @State private var category: PocketVoiceCategory
     @State private var photoItem: PhotosPickerItem?
     @State private var photoData: Data?
+    @State private var sourcePhotoData: Data?
+    @State private var photoDecoration: PocketVoicePhotoDecoration
     @State private var cropImage: UIImage?
     @State private var isShowingPhotoCropper = false
     @State private var audioFileName: String?
@@ -738,6 +740,8 @@ private struct PersonEditorView: View {
         _name = State(initialValue: person?.name ?? "")
         _category = State(initialValue: person?.category ?? .family)
         _photoData = State(initialValue: person.flatMap { PocketVoiceStore.photoData(for: $0) })
+        _sourcePhotoData = State(initialValue: person.flatMap { PocketVoiceStore.sourcePhotoData(for: $0) } ?? person.flatMap { PocketVoiceStore.photoData(for: $0) })
+        _photoDecoration = State(initialValue: person?.photoDecoration ?? .empty)
         _audioFileName = State(initialValue: person?.audioFileName)
         let savedLanguage = UserDefaults.standard.string(forKey: "pocketvoice.language") ?? AppLanguage.korean.rawValue
         _status = State(initialValue: AppText.value(.maxDuration, language: savedLanguage))
@@ -761,8 +765,15 @@ private struct PersonEditorView: View {
                 .disabled(isShowingPhotoCropper)
 
                 if isShowingPhotoCropper, let cropImage {
-                    PhotoCropperView(image: cropImage, title: text(.photoAdjust), accent: accent) { data in
+                    PhotoCropperView(
+                        image: cropImage,
+                        title: text(.photoAdjust),
+                        accent: accent,
+                        initialDecoration: photoDecoration
+                    ) { data, decoration in
                         photoData = data
+                        sourcePhotoData = cropImage.pngData()
+                        photoDecoration = decoration
                         status = text(.photoAdded)
                         isShowingPhotoCropper = false
                     } onCancel: {
@@ -888,7 +899,8 @@ private struct PersonEditorView: View {
         .overlay(alignment: .bottomTrailing) {
             if photoData != nil {
                 Button {
-                    if let photoData, let image = UIImage(data: photoData)?.normalizedForPocketVoice() {
+                    let editableData = sourcePhotoData ?? photoData
+                    if let editableData, let image = UIImage(data: editableData)?.normalizedForPocketVoice() {
                         cropImage = image
                         isShowingPhotoCropper = true
                     }
@@ -1090,6 +1102,8 @@ private struct PersonEditorView: View {
                 status = text(.photoFailed)
                 return
             }
+            sourcePhotoData = image.pngData()
+            photoDecoration = .empty
             cropImage = image
             isShowingPhotoCropper = true
         } catch {
@@ -1101,13 +1115,17 @@ private struct PersonEditorView: View {
         do {
             stopPreview()
             let normalizedPhotoData = photoData.flatMap { normalizedPhotoPNGData(from: $0) ?? $0 }
+            let normalizedSourcePhotoData = sourcePhotoData.flatMap { normalizedPhotoPNGData(from: $0) ?? $0 }
             let savedPhotoFileName = try normalizedPhotoData.map { try PocketVoiceStore.savePhotoData($0, for: draftID) } ?? person?.photoFileName
+            let savedSourcePhotoFileName = try normalizedSourcePhotoData.map { try PocketVoiceStore.saveSourcePhotoData($0, for: draftID) } ?? person?.sourcePhotoFileName
             let updated = PocketVoicePerson(
                 id: draftID,
                 name: name.trimmingCharacters(in: .whitespacesAndNewlines),
                 category: category,
                 accent: .sky,
                 photoFileName: savedPhotoFileName,
+                sourcePhotoFileName: savedSourcePhotoFileName,
+                photoDecoration: photoDecoration,
                 audioFileName: audioFileName ?? person?.audioFileName,
                 createdAt: person?.createdAt ?? Date(),
                 sortOrder: person?.sortOrder ?? 0
@@ -1147,18 +1165,47 @@ private struct PhotoCropperView: View {
     let image: UIImage
     let title: String
     let accent: Color
-    let onComplete: (Data) -> Void
+    let initialDecoration: PocketVoicePhotoDecoration
+    let onComplete: (Data, PocketVoicePhotoDecoration) -> Void
     let onCancel: () -> Void
 
-    @State private var scale: CGFloat = 1
-    @State private var lastScale: CGFloat = 1
-    @State private var offset: CGSize = .zero
-    @State private var lastOffset: CGSize = .zero
-    @State private var stickerOffsets: [Int: CGSize] = [:]
+    @State private var scale: CGFloat
+    @State private var lastScale: CGFloat
+    @State private var offset: CGSize
+    @State private var lastOffset: CGSize
+    @State private var placedStickerOffsets: [Int: CGSize]
+    @State private var paletteDragOffsets: [Int: CGSize] = [:]
     @State private var stickerDragStarts: [Int: CGSize] = [:]
 
     private let frameSize: CGFloat = 300
     private let outputSize = CGSize(width: 1_000, height: 1_000)
+
+    init(
+        image: UIImage,
+        title: String,
+        accent: Color,
+        initialDecoration: PocketVoicePhotoDecoration,
+        onComplete: @escaping (Data, PocketVoicePhotoDecoration) -> Void,
+        onCancel: @escaping () -> Void
+    ) {
+        self.image = image
+        self.title = title
+        self.accent = accent
+        self.initialDecoration = initialDecoration
+        self.onComplete = onComplete
+        self.onCancel = onCancel
+
+        let initialScale = min(max(CGFloat(initialDecoration.scale), 1), 3)
+        let initialOffset = CGSize(width: initialDecoration.offsetWidth, height: initialDecoration.offsetHeight)
+        let stickers = Dictionary(uniqueKeysWithValues: initialDecoration.stickers.map {
+            ($0.id, CGSize(width: $0.offsetWidth, height: $0.offsetHeight))
+        })
+        _scale = State(initialValue: initialScale)
+        _lastScale = State(initialValue: initialScale)
+        _offset = State(initialValue: initialOffset)
+        _lastOffset = State(initialValue: initialOffset)
+        _placedStickerOffsets = State(initialValue: stickers)
+    }
 
     private var stickers: [DecorationSticker] {
         [
@@ -1175,6 +1222,10 @@ private struct PhotoCropperView: View {
         ]
     }
 
+    private var availableStickers: [DecorationSticker] {
+        stickers.filter { placedStickerOffsets[$0.id] == nil }
+    }
+
     var body: some View {
         ZStack {
             AppBackgroundImage()
@@ -1185,13 +1236,10 @@ private struct PhotoCropperView: View {
                 Spacer(minLength: 4)
 
                 ZStack {
-                    ForEach(stickers) { sticker in
-                        stickerView(sticker)
-                    }
-
                     RoundedRectangle(cornerRadius: 30)
                         .fill(Color.white.opacity(0.38))
                         .frame(width: frameSize + 18, height: frameSize + 18)
+                        .zIndex(0)
 
                     ZStack {
                         Image(uiImage: image)
@@ -1202,12 +1250,24 @@ private struct PhotoCropperView: View {
                             .offset(offset)
                     }
                     .frame(width: frameSize, height: frameSize)
+                    .contentShape(RoundedRectangle(cornerRadius: 26))
                     .clipShape(RoundedRectangle(cornerRadius: 26))
                     .gesture(dragGesture.simultaneously(with: magnificationGesture))
                     .overlay {
                         RoundedRectangle(cornerRadius: 26)
                             .stroke(.white.opacity(0.92), lineWidth: 3)
                     }
+                    .zIndex(1)
+
+                    ForEach(placedStickersForDisplay()) { sticker in
+                        placedStickerView(sticker)
+                    }
+                    .zIndex(2)
+
+                    ForEach(availableStickers) { sticker in
+                        paletteStickerView(sticker)
+                    }
+                    .zIndex(3)
                 }
                 .frame(width: 390, height: 540)
                 .shadow(color: Color(hex: 0x3A2500).opacity(0.16), radius: 24, y: 12)
@@ -1215,6 +1275,7 @@ private struct PhotoCropperView: View {
                 Spacer(minLength: 8)
             }
         }
+        .onAppear(perform: clampOffset)
     }
 
     private var header: some View {
@@ -1238,7 +1299,7 @@ private struct PhotoCropperView: View {
 
             Button {
                 if let data = decoratedPNGData() {
-                    onComplete(data)
+                    onComplete(data, decorationFromState())
                 }
             } label: {
                 Image(systemName: "checkmark")
@@ -1253,42 +1314,78 @@ private struct PhotoCropperView: View {
         .padding(.top, 18)
     }
 
-    private func stickerView(_ sticker: DecorationSticker) -> some View {
-        let current = stickerCurrentOffset(sticker)
+    private func paletteStickerView(_ sticker: DecorationSticker) -> some View {
+        let current = paletteStickerCurrentOffset(sticker)
         return Text(sticker.emoji)
             .font(.system(size: sticker.size))
             .rotationEffect(.degrees(sticker.rotation))
             .shadow(color: .black.opacity(0.16), radius: 5, y: 3)
             .offset(current)
+            .contentShape(Rectangle())
+            .gesture(
+                LongPressGesture(minimumDuration: 0.22)
+                    .sequenced(before: DragGesture())
+                    .onChanged { value in
+                        guard case .second(true, let drag?) = value else { return }
+                        paletteDragOffsets[sticker.id] = drag.translation
+                    }
+                    .onEnded { value in
+                        if case .second(true, let drag?) = value {
+                            let final = CGSize(width: sticker.base.width + drag.translation.width, height: sticker.base.height + drag.translation.height)
+                            if isInsideFrame(final) {
+                                placedStickerOffsets[sticker.id] = final
+                            }
+                        }
+                        paletteDragOffsets[sticker.id] = nil
+                    }
+            )
+    }
+
+    private func placedStickerView(_ sticker: DecorationSticker) -> some View {
+        let current = placedStickerOffsets[sticker.id] ?? .zero
+        return Text(sticker.emoji)
+            .font(.system(size: sticker.size))
+            .rotationEffect(.degrees(sticker.rotation))
+            .shadow(color: .black.opacity(0.18), radius: 5, y: 3)
+            .offset(current)
+            .contentShape(Rectangle())
             .gesture(
                 DragGesture()
                     .onChanged { value in
-                        let start = stickerDragStarts[sticker.id] ?? stickerOffsets[sticker.id] ?? .zero
+                        let start = stickerDragStarts[sticker.id] ?? current
                         stickerDragStarts[sticker.id] = start
-                        stickerOffsets[sticker.id] = CGSize(
+                        placedStickerOffsets[sticker.id] = CGSize(
                             width: start.width + value.translation.width,
                             height: start.height + value.translation.height
                         )
                     }
                     .onEnded { _ in
+                        if let final = placedStickerOffsets[sticker.id], !isInsideFrame(final) {
+                            placedStickerOffsets[sticker.id] = nil
+                        }
                         stickerDragStarts[sticker.id] = nil
                     }
             )
     }
 
-    private func stickerCurrentOffset(_ sticker: DecorationSticker) -> CGSize {
-        let adjustment = stickerOffsets[sticker.id] ?? .zero
+    private func paletteStickerCurrentOffset(_ sticker: DecorationSticker) -> CGSize {
+        let adjustment = paletteDragOffsets[sticker.id] ?? .zero
         return CGSize(width: sticker.base.width + adjustment.width, height: sticker.base.height + adjustment.height)
     }
 
-    private func placedStickers() -> [(DecorationSticker, CGSize)] {
-        stickers.compactMap { sticker in
-            let current = stickerCurrentOffset(sticker)
-            guard abs(current.width) <= frameSize / 2, abs(current.height) <= frameSize / 2 else {
-                return nil
-            }
+    private func placedStickersForDisplay() -> [DecorationSticker] {
+        stickers.filter { placedStickerOffsets[$0.id] != nil }
+    }
+
+    private func placedStickersForOutput() -> [(DecorationSticker, CGSize)] {
+        placedStickersForDisplay().compactMap { sticker in
+            guard let current = placedStickerOffsets[sticker.id], isInsideFrame(current) else { return nil }
             return (sticker, current)
         }
+    }
+
+    private func isInsideFrame(_ position: CGSize) -> Bool {
+        abs(position.width) <= frameSize / 2 && abs(position.height) <= frameSize / 2
     }
 
     private var dragGesture: some Gesture {
@@ -1344,7 +1441,7 @@ private struct PhotoCropperView: View {
             cropped.draw(in: CGRect(origin: .zero, size: outputSize))
 
             let ratio = outputSize.width / frameSize
-            for (sticker, stickerOffset) in placedStickers() {
+            for (sticker, stickerOffset) in placedStickersForOutput() {
                 let fontSize = sticker.size * ratio
                 let attributes: [NSAttributedString.Key: Any] = [
                     .font: UIFont.systemFont(ofSize: fontSize)
@@ -1391,8 +1488,25 @@ private struct PhotoCropperView: View {
             UIImage(cgImage: cropped).draw(in: CGRect(origin: .zero, size: outputSize))
         }
     }
-}
 
+    private func decorationFromState() -> PocketVoicePhotoDecoration {
+        PocketVoicePhotoDecoration(
+            scale: Double(scale),
+            offsetWidth: Double(offset.width),
+            offsetHeight: Double(offset.height),
+            stickers: placedStickersForOutput().map { sticker, stickerOffset in
+                PocketVoicePhotoSticker(
+                    id: sticker.id,
+                    emoji: sticker.emoji,
+                    size: Double(sticker.size),
+                    rotation: sticker.rotation,
+                    offsetWidth: Double(stickerOffset.width),
+                    offsetHeight: Double(stickerOffset.height)
+                )
+            }
+        )
+    }
+}
 private struct DecorationSticker: Identifiable {
     let id: Int
     let emoji: String

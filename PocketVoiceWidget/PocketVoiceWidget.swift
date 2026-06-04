@@ -95,7 +95,9 @@ struct PocketVoiceWidgetView: View {
     }
 
     private var visiblePeople: [PocketVoicePerson?] {
-        Array(entry.people.prefix(maxPeople))
+        let people = Array(entry.people.prefix(maxPeople))
+        guard people.count < maxPeople else { return people }
+        return people + Array(repeating: nil, count: maxPeople - people.count)
     }
 
     private var maxPeople: Int {
