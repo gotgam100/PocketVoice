@@ -3,6 +3,8 @@ import WidgetKit
 
 @main
 struct PocketVoiceApp: App {
+    @Environment(\.scenePhase) private var scenePhase
+
     init() {
         UserDefaults.standard.register(defaults: [PocketVoiceShared.languageKey: "ko"])
         let currentLanguage = UserDefaults.standard.string(forKey: PocketVoiceShared.languageKey) ?? "ko"
@@ -16,6 +18,7 @@ struct PocketVoiceApp: App {
         WindowGroup {
             ContentView()
                 .onAppear {
+                    PocketVoicePlus.shared.start()
                     do {
                         try PocketVoiceStore.ensureContainerExists()
                         WidgetCenter.shared.reloadAllTimelines()
@@ -23,6 +26,16 @@ struct PocketVoiceApp: App {
                         PocketVoiceShared.appendLog("Launch setup failed: \(error.localizedDescription)")
                     }
                 }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .active:
+                Task { await PocketVoiceBackup.loadFromOtherDeviceIfNeeded() }
+            case .background:
+                PocketVoiceBackup.autoBackupIfNeeded()
+            default:
+                break
+            }
         }
     }
 }

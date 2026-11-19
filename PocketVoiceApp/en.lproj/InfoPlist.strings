@@ -1,1 +1,3 @@
 CFBundleDisplayName = "Pocket Voice";
+NSMicrophoneUsageDescription = "Pocket Voice needs the microphone to record voices.";
+NSPhotoLibraryUsageDescription = "Pocket Voice needs photo access to use a person's photo on the widget.";

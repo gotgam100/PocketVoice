@@ -69,6 +69,8 @@ private enum AppText {
         case (.name, .english): "Name"
         case (.maxDuration, .korean): "최대 10초"
         case (.maxDuration, .english): "Up to 10 sec"
+        case (.maxDurationPlus, .korean): "최대 1분"
+        case (.maxDurationPlus, .english): "Up to 1 min"
         case (.recorded, .korean): "녹음 완료"
         case (.recorded, .english): "Recorded"
         case (.recording, .korean): "녹음 중"
@@ -98,6 +100,7 @@ private enum AppText {
         case language
         case name
         case maxDuration
+        case maxDurationPlus
         case recorded
         case recording
         case preview
@@ -140,6 +143,8 @@ struct ContentView: View {
     @State private var playingPersonID: String?
     @State private var playbackResetWorkItem: DispatchWorkItem?
     @State private var isShowingAppSettings = false
+    @State private var isShowingPlus = false
+    @ObservedObject private var plus = PocketVoicePlus.shared
     // Reordering: the row being dragged, how far the finger has moved, and
     // where that row started, so it can stay under the finger while others move.
     @State private var draggingID: String?
@@ -169,7 +174,13 @@ struct ContentView: View {
             .sheet(isPresented: $isShowingAppSettings) {
                 AppSettingsView()
             }
+            .sheet(isPresented: $isShowingPlus) {
+                PocketVoicePlusView(reason: .peopleLimit)
+            }
             .onAppear {
+                reloadPeople()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: PocketVoiceBackup.didRestoreNotification)) { _ in
                 reloadPeople()
             }
         }
@@ -255,16 +266,19 @@ struct ContentView: View {
             }
 
             VStack(alignment: .trailing, spacing: 10) {
-                Text("\(people.count)/\(PocketVoiceStore.maxPeople)")
-                    .font(PocketVoiceFont.rounded(13, weight: .semibold))
-                    .foregroundStyle(Color.pocketvoiceInk.opacity(0.78))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(.white.opacity(0.48), in: Capsule())
-                    .overlay(Capsule().stroke(.white.opacity(0.58), lineWidth: 1))
+                // Plus has no limit, so the counter only shows in the free version.
+                if !plus.isActive {
+                    Text("\(people.count)/\(PocketVoicePlus.freePeopleLimit)")
+                        .font(PocketVoiceFont.rounded(13, weight: .semibold))
+                        .foregroundStyle(Color.pocketvoiceInk.opacity(0.78))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(.white.opacity(0.48), in: Capsule())
+                        .overlay(Capsule().stroke(.white.opacity(0.58), lineWidth: 1))
+                }
 
                 Button {
-                    editorRoute = .new
+                    addPerson()
                 } label: {
                     Image(systemName: "plus")
                         .font(.system(size: 24, weight: .bold))
@@ -275,8 +289,6 @@ struct ContentView: View {
                         .shadow(color: Color.pocketvoiceRedDeep.opacity(0.32), radius: 18, y: 10)
                 }
                 .buttonStyle(.plain)
-                .disabled(people.count >= PocketVoiceStore.maxPeople)
-                .opacity(people.count >= PocketVoiceStore.maxPeople ? 0.35 : 1)
             }
             .padding(.trailing, 22)
             .padding(.bottom, 44)
@@ -293,6 +305,16 @@ struct ContentView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity)
+    }
+
+    /// Free users can keep everyone they already have (e.g. restored from a
+    /// backup); only adding past the limit shows the Plus sheet.
+    private func addPerson() {
+        if plus.isActive || people.count < PocketVoicePlus.freePeopleLimit {
+            editorRoute = .new
+        } else {
+            isShowingPlus = true
+        }
     }
 
     private func reloadPeople() {
@@ -789,6 +811,9 @@ private struct AppSettingsView: View {
     @AppStorage(PocketVoiceShared.languageKey) private var languageRaw = AppLanguage.korean.rawValue
     // Stored in the shared App Group defaults so widget playback uses it too.
     @AppStorage(PocketVoiceShared.volumeKey, store: PocketVoiceShared.sharedDefaults) private var appVolume = 1.0
+    @ObservedObject private var plus = PocketVoicePlus.shared
+    @State private var isShowingPlus = false
+    @State private var lastBackupDate = PocketVoiceBackup.lastBackupDate
 
     private var currentLanguage: AppLanguage {
         AppLanguage(rawValue: languageRaw) ?? .korean
@@ -828,7 +853,15 @@ private struct AppSettingsView: View {
                     }
 
                     settingsSection {
+                        plusSection
+                    }
+
+                    settingsSection {
                         volumeControl
+                    }
+
+                    settingsSection {
+                        backupSection
                     }
 
                     settingsSection {
@@ -878,7 +911,121 @@ private struct AppSettingsView: View {
                     }
                 }
             }
+            .sheet(isPresented: $isShowingPlus) {
+                PocketVoicePlusView(reason: .settings)
+            }
+            .onAppear {
+                lastBackupDate = PocketVoiceBackup.lastBackupDate
+            }
         }
+    }
+
+    private var isKorean: Bool {
+        currentLanguage == .korean
+    }
+
+    private var plusSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: "star.circle.fill")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(Color.pocketvoiceBlue)
+                Text("Pocket Voice Plus")
+                    .font(PocketVoiceFont.rounded(15, weight: .bold))
+                    .foregroundStyle(Color.pocketvoiceInk)
+                Spacer()
+                if plus.isActive {
+                    Text(isKorean ? "사용 중" : "Active")
+                        .font(PocketVoiceFont.rounded(13, weight: .bold))
+                        .foregroundStyle(Color.pocketvoiceBlue)
+                }
+            }
+
+            Text(plusDescription)
+                .font(PocketVoiceFont.rounded(12, weight: .medium))
+                .foregroundStyle(Color.pocketvoiceInk.opacity(0.55))
+                .fixedSize(horizontal: false, vertical: true)
+
+            if !plus.isActive {
+                Button {
+                    isShowingPlus = true
+                } label: {
+                    Text(isKorean
+                         ? "\(plus.product?.displayPrice ?? "₩1,100")에 구매하기"
+                         : "Buy for \(plus.product?.displayPrice ?? "₩1,100")")
+                        .font(PocketVoiceFont.rounded(15, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                        .background(Color.pocketvoiceBlue, in: Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var plusDescription: String {
+        if plus.isEarlyUser && !plus.isPurchased {
+            return isKorean
+                ? "기존 사용자 혜택으로 무료로 사용 중이에요. 인물 수 제한 없이, 최대 1분까지 녹음할 수 있어요."
+                : "Free for you as an early user. Add as many people as you like and record up to 1 minute."
+        }
+        if plus.isActive {
+            return isKorean
+                ? "인물 수 제한 없이, 최대 1분까지 녹음할 수 있어요."
+                : "Add as many people as you like and record up to 1 minute."
+        }
+        return isKorean
+            ? "한 번 구매로 인물 수 제한을 풀고, 최대 1분까지 녹음할 수 있어요. (무료: 4명, 10초)"
+            : "One purchase removes the people limit and lets you record up to 1 minute. (Free: 4 people, 10 sec)"
+    }
+
+    private var backupSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                Image(systemName: "icloud.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Color.pocketvoiceBlue)
+                Text(isKorean ? "iCloud 자동 백업" : "iCloud Auto Backup")
+                    .font(PocketVoiceFont.rounded(15, weight: .bold))
+                    .foregroundStyle(Color.pocketvoiceInk)
+                Spacer()
+                if PocketVoiceBackup.isICloudSignedIn {
+                    Text(isKorean ? "켜짐" : "On")
+                        .font(PocketVoiceFont.rounded(13, weight: .bold))
+                        .foregroundStyle(Color.pocketvoiceBlue)
+                }
+            }
+
+            if PocketVoiceBackup.isICloudSignedIn {
+                Text(backupStatusText)
+                    .font(PocketVoiceFont.rounded(13, weight: .semibold))
+                    .foregroundStyle(Color.pocketvoiceMuted)
+            }
+
+            Text(PocketVoiceBackup.isICloudSignedIn
+                 ? (isKorean
+                    ? "앱을 닫을 때 바뀐 내용을 내 iCloud에 자동으로 백업해요. 같은 Apple 계정의 다른 iPhone에서 앱을 열면 자동으로 불러와요. iCloud 저장 공간을 사용해요."
+                    : "Changes are backed up to your iCloud when you leave the app, and load automatically when you open the app on another iPhone with the same Apple Account. Uses your iCloud storage.")
+                 : (isKorean
+                    ? "iPhone 설정에서 iCloud에 로그인하고 iCloud Drive를 켜면 자동으로 백업돼요."
+                    : "Sign in to iCloud and turn on iCloud Drive in Settings to back up automatically."))
+                .font(PocketVoiceFont.rounded(12, weight: .medium))
+                .foregroundStyle(Color.pocketvoiceInk.opacity(0.55))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var backupStatusText: String {
+        guard let date = lastBackupDate else {
+            return isKorean ? "아직 백업 전이에요" : "Not backed up yet"
+        }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: isKorean ? "ko_KR" : "en_US")
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        let when = formatter.string(from: date)
+        return isKorean ? "마지막 백업: \(when)" : "Last backup: \(when)"
     }
 
     private var volumeControl: some View {
@@ -1040,6 +1187,7 @@ private struct PersonThumbnail: View {
 private struct PersonEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var recorder = VoiceRecorder()
+    @ObservedObject private var plus = PocketVoicePlus.shared
     @AppStorage(PocketVoiceShared.languageKey) private var languageRaw = AppLanguage.korean.rawValue
 
     let person: PocketVoicePerson?
@@ -1062,6 +1210,7 @@ private struct PersonEditorView: View {
     @FocusState private var isNameFocused: Bool
     @State private var savedLevels: [Float] = []
     @State private var previewStartedAt: Date?
+    @State private var previewDuration: TimeInterval = 0
 
     private var accent: Color {
         Color.pocketvoiceRed
@@ -1078,7 +1227,7 @@ private struct PersonEditorView: View {
         _photoDecoration = State(initialValue: person?.photoDecoration ?? .empty)
         _audioFileName = State(initialValue: person?.audioFileName)
         let savedLanguage = UserDefaults.standard.string(forKey: "pocketvoice.language") ?? AppLanguage.korean.rawValue
-        _status = State(initialValue: AppText.value(.maxDuration, language: savedLanguage))
+        _status = State(initialValue: AppText.value(PocketVoicePlus.cachedIsActive ? .maxDurationPlus : .maxDuration, language: savedLanguage))
     }
 
     var body: some View {
@@ -1139,8 +1288,16 @@ private struct PersonEditorView: View {
                 }
             }
             .onChange(of: recorder.isRecording) { _, isRecording in
-                if !isRecording, recorder.lastRecordedURL != nil {
+                if !isRecording, let url = recorder.lastRecordedURL {
                     status = text(.recorded)
+                    // Redraw the finished recording across the whole width.
+                    Task {
+                        await PocketVoiceAudioSession.waitForPendingWork()
+                        let levels = await VoiceWaveform.levels(for: url)
+                        if !levels.isEmpty, !recorder.isRecording {
+                            recorder.levels = levels
+                        }
+                    }
                 }
             }
             .onDisappear(perform: cleanUpOnClose)
@@ -1150,9 +1307,11 @@ private struct PersonEditorView: View {
                 }
             }
             .onAppear {
-                if status == AppText.value(.maxDuration, language: AppLanguage.korean.rawValue)
-                    || status == AppText.value(.maxDuration, language: AppLanguage.english.rawValue) {
-                    status = text(.maxDuration)
+                let hints = [AppText.Key.maxDuration, .maxDurationPlus].flatMap { key in
+                    AppLanguage.allCases.map { AppText.value(key, language: $0.rawValue) }
+                }
+                if hints.contains(status) {
+                    status = text(durationHintKey)
                 }
             }
         }
@@ -1160,6 +1319,10 @@ private struct PersonEditorView: View {
 
     private func text(_ key: AppText.Key) -> String {
         AppText.value(key, language: languageRaw)
+    }
+
+    private var durationHintKey: AppText.Key {
+        plus.isActive ? .maxDurationPlus : .maxDuration
     }
 
     private var editorHeader: some View {
@@ -1381,9 +1544,9 @@ private struct PersonEditorView: View {
 
     /// While previewing, only the bars already played are bright.
     private func highlightedBarCount(at date: Date) -> Int {
-        guard isPreviewPlaying, let previewStartedAt else { return waveformLevels.count }
-        let played = date.timeIntervalSince(previewStartedAt)
-        return Int(played / VoiceWaveform.barDuration) + 1
+        guard isPreviewPlaying, let previewStartedAt, previewDuration > 0 else { return waveformLevels.count }
+        let played = date.timeIntervalSince(previewStartedAt) / previewDuration
+        return Int(played * Double(waveformLevels.count)) + 1
     }
 
     private var hasPlayableVoice: Bool {
@@ -1402,7 +1565,7 @@ private struct PersonEditorView: View {
         let url = PocketVoiceStore.draftAudioURL(for: draftID)
         Task {
             do {
-                try await recorder.start(url: url, maxDuration: 10.0)
+                try await recorder.start(url: url, maxDuration: PocketVoicePlus.recordingSeconds(isPlus: plus.isActive))
                 status = text(.recording)
             } catch {
                 status = error.localizedDescription
@@ -1459,6 +1622,7 @@ private struct PersonEditorView: View {
     private func pulsePreview(duration: TimeInterval) {
         previewResetWorkItem?.cancel()
         previewStartedAt = Date()
+        previewDuration = duration
         isPreviewPlaying = true
 
         let reset = DispatchWorkItem {
@@ -2028,7 +2192,8 @@ private final class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDe
             elapsed = min(recorder.currentTime, self.maxDuration)
             recorder.updateMeters()
             let level = VoiceWaveform.level(fromDecibels: recorder.averagePower(forChannel: 0))
-            let index = min(Int(elapsed / VoiceWaveform.barDuration), VoiceWaveform.barCount - 1)
+            let barDuration = self.maxDuration / Double(VoiceWaveform.barCount)
+            let index = min(Int(elapsed / barDuration), VoiceWaveform.barCount - 1)
             while levels.count <= index {
                 levels.append(0)
             }
@@ -2112,9 +2277,9 @@ private struct AppBackgroundImage: View {
     }
 }
 
-/// Shared scale for live and file waveforms: one bar per 0.25 s, 40 bars = 10 s.
+/// 40 bars. While recording, the bars span the maximum length (10 s or 1 min);
+/// a finished recording is spread across all 40 bars.
 private enum VoiceWaveform {
-    static let barDuration: TimeInterval = 0.25
     static let barCount = 40
 
     /// Maps dBFS (about -45 quiet ... -5 loud) to 0...1. Squaring spreads out
@@ -2134,8 +2299,8 @@ private enum VoiceWaveform {
                 return []
             }
 
-            let framesPerBar = max(Int(file.processingFormat.sampleRate * barDuration), 1)
             let frameCount = Int(buffer.frameLength)
+            let framesPerBar = max(Int((Double(frameCount) / Double(barCount)).rounded(.up)), 1)
             var result: [Float] = []
             var start = 0
             while start < frameCount, result.count < barCount {

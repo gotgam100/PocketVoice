@@ -1,0 +1,35 @@
+{
+  "identifier" : "5B1F2C7A",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "1100",
+      "familyShareable" : false,
+      "internalID" : "6740000001",
+      "localizations" : [
+        {
+          "description" : "인물 수 제한 없이, 최대 1분까지 녹음",
+          "displayName" : "Pocket Voice Plus",
+          "locale" : "ko"
+        }
+      ],
+      "productID" : "com.baekmac.pocketvoice.plus",
+      "referenceName" : "Pocket Voice Plus",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "ko_KR",
+    "_storefront" : "KOR"
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

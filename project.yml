@@ -6,7 +6,7 @@ options:
   createIntermediateGroups: true
 settings:
   base:
-    MARKETING_VERSION: "1.1"
+    MARKETING_VERSION: "2.0"
     CURRENT_PROJECT_VERSION: "2"
     DEVELOPMENT_TEAM: SB2Z6HL579
     CODE_SIGN_STYLE: Automatic
@@ -67,6 +67,10 @@ schemes:
     run:
       config: Debug
       executable: PocketVoiceApp
+      storeKitConfiguration: StoreKit/PocketVoice.storekit
+      # Debug builds only. Set to false to see the free version.
+      commandLineArguments:
+        "-PocketVoicePlusPurchased YES": true
   PocketVoiceWidgetExtension:
     build:
       targets:

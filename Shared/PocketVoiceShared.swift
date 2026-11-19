@@ -240,7 +240,6 @@ enum PocketVoiceShared {
 }
 
 enum PocketVoiceStore {
-    static let maxPeople = 10
     private static let peopleFileName = "people.json"
 
     static var peopleFileURL: URL {
@@ -296,9 +295,8 @@ enum PocketVoiceStore {
         if let index = people.firstIndex(where: { $0.id == person.id }) {
             people[index] = person
         } else {
-            guard people.count < maxPeople else {
-                throw PocketVoiceError.peopleLimitReached
-            }
+            // The free-version limit is enforced by the app UI (PocketVoicePlus),
+            // so people restored from a backup are never refused here.
             var newPerson = person
             newPerson.sortOrder = people.count
             people.append(newPerson)
@@ -412,7 +410,6 @@ enum PocketVoiceStore {
 
 enum PocketVoiceError: Error, LocalizedError {
     case appGroupUnavailable
-    case peopleLimitReached
     case personMissing
     case audioMissing
     case playbackFailed
@@ -422,8 +419,6 @@ enum PocketVoiceError: Error, LocalizedError {
         return switch self {
         case .appGroupUnavailable:
             english ? "Storage is unavailable." : "저장 공간을 사용할 수 없습니다."
-        case .peopleLimitReached:
-            english ? "You can add up to \(PocketVoiceStore.maxPeople) people." : "최대 \(PocketVoiceStore.maxPeople)명까지 등록할 수 있습니다."
         case .personMissing:
             english ? "Person not found." : "인물을 찾을 수 없습니다."
         case .audioMissing:

@@ -30,7 +30,7 @@ struct PocketVoiceProvider: AppIntentTimelineProvider {
             people: [
                 PocketVoicePerson(
                     id: "placeholder",
-                    name: "엄마",
+                    name: PocketVoiceShared.isEnglish ? "Mom" : "엄마",
                     photoFileName: nil,
                     audioFileName: nil,
                     createdAt: .now

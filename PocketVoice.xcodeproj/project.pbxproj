@@ -11,6 +11,7 @@
 		1731EB5E625BDA46C51AD488 /* Paperlogy-4Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0DB68F29064D8EA87DDC16D0 /* Paperlogy-4Regular.ttf */; };
 		1D0FA2BAFFD078D8FE83C9AC /* PocketVoiceApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE0C59251108B47EA9D20C6 /* PocketVoiceApp.swift */; };
 		267D18688C0E51D528004D45 /* PocketVoiceShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08FDE1CDB41FB94F5F37C0FC /* PocketVoiceShared.swift */; };
+		29748A0D549F5D246A43550D /* PocketVoicePlus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2412966A61326009E3D7A0CB /* PocketVoicePlus.swift */; };
 		2C5D6B8E8FF156F6B4DB4824 /* Paperlogy-5Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F67416F196D2B54588A814B1 /* Paperlogy-5Medium.ttf */; };
 		33BB2CE67C781670A5CEA0F8 /* PocketVoiceWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A3713A6596D3E2682A30DDDE /* PocketVoiceWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		3739A96D34B206EAF641C8CA /* ChangwonDangamAsac-Bold_0712.otf in Resources */ = {isa = PBXBuildFile; fileRef = 5F242817266D3C832BCEBEBA /* ChangwonDangamAsac-Bold_0712.otf */; };
@@ -32,12 +33,15 @@
 		82E1B85F966BE51AD934521F /* Paperlogy-2ExtraLight.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FB719E96D3760289663BFE93 /* Paperlogy-2ExtraLight.ttf */; };
 		89DF7F5282794B521E93F9EF /* Cafe24Nyangi-B-v1.0.otf in Resources */ = {isa = PBXBuildFile; fileRef = E95448F2D18C58BB9DC49D9D /* Cafe24Nyangi-B-v1.0.otf */; };
 		8D9E730B7EA281DE3F21C788 /* PocketVoiceShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08FDE1CDB41FB94F5F37C0FC /* PocketVoiceShared.swift */; };
+		8EDECF04D860EFA43C0C3953 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 690D0D4B5526B0507CD73029 /* PrivacyInfo.xcprivacy */; };
 		9787ECDF937530A914A9E1D8 /* Paperlogy-3Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0FDAADDF2A7C8CAFD82570E8 /* Paperlogy-3Light.ttf */; };
+		9A0A3EA92D49FAEBED1064DA /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = FE2B6826D42D2248DDF4EF75 /* PrivacyInfo.xcprivacy */; };
 		A6B323990B05959A5BDD77B9 /* Paperlogy-5Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F67416F196D2B54588A814B1 /* Paperlogy-5Medium.ttf */; };
 		A7B2F4ECFCCB8C92EEFDA3AA /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = C021BE90324A1BD33CE6A1F4 /* Localizable.strings */; };
 		AB28015EFAD6D83ECB6C5C02 /* Paperlogy-1Thin.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1FE1DD7239DBBBB6C34B4CDC /* Paperlogy-1Thin.ttf */; };
 		AC774055E8D9FCA5112F09D9 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2A17BEB69E5DB4B68F1FD1B5 /* InfoPlist.strings */; };
 		ACAE9839C52FCF51576A2BA9 /* Cafe24Nyangi-B-v1.0.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EA07D135425AE92891BE4200 /* Cafe24Nyangi-B-v1.0.ttf */; };
+		B3984CBFC9463752D2FC9008 /* PocketVoiceBackup.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE4349A57F61BE4B4AD45BD5 /* PocketVoiceBackup.swift */; };
 		B964288F2AE124E7BD768003 /* ChangwonDangamAsac-Bold_0712.otf in Resources */ = {isa = PBXBuildFile; fileRef = 5F242817266D3C832BCEBEBA /* ChangwonDangamAsac-Bold_0712.otf */; };
 		C74FF2F2404A01CB2204A111 /* Paperlogy-8ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D0C771ABBD56EEA38C3BD7DE /* Paperlogy-8ExtraBold.ttf */; };
 		C979241066875760038892C3 /* PocketVoiceIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5097B275932B7642916800E1 /* PocketVoiceIntents.swift */; };
@@ -79,6 +83,7 @@
 		16641721D2EE5B69D26212C2 /* Paperlogy-7Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Paperlogy-7Bold.ttf"; sourceTree = "<group>"; };
 		19A45234DFF65ABA6FC6BBA0 /* Paperlogy-9Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Paperlogy-9Black.ttf"; sourceTree = "<group>"; };
 		1FE1DD7239DBBBB6C34B4CDC /* Paperlogy-1Thin.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Paperlogy-1Thin.ttf"; sourceTree = "<group>"; };
+		2412966A61326009E3D7A0CB /* PocketVoicePlus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketVoicePlus.swift; sourceTree = "<group>"; };
 		270F6E1B728AB9D1C527DDF7 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		3EB531BA1938A8B5D5DE48C2 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		5097B275932B7642916800E1 /* PocketVoiceIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketVoiceIntents.swift; sourceTree = "<group>"; };
@@ -86,6 +91,7 @@
 		56F11FDA3F6F60302108DE93 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		5E78BA41E8D5BCD880C19DBD /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/Localizable.strings; sourceTree = "<group>"; };
 		5F242817266D3C832BCEBEBA /* ChangwonDangamAsac-Bold_0712.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ChangwonDangamAsac-Bold_0712.otf"; sourceTree = "<group>"; };
+		690D0D4B5526B0507CD73029 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		7BE8758F0728D9076FD812E7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		7E2F2C1DFE5E7A184BF37976 /* Paperlogy-6SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Paperlogy-6SemiBold.ttf"; sourceTree = "<group>"; };
 		8F28390DDCD51AFB0AF4336C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -96,6 +102,7 @@
 		A6587D120551E6FE0D3EF87C /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		B3985ED2BB1129BB3307F440 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		B566D1389A92A25C4B5D8642 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		BE4349A57F61BE4B4AD45BD5 /* PocketVoiceBackup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketVoiceBackup.swift; sourceTree = "<group>"; };
 		D0C771ABBD56EEA38C3BD7DE /* Paperlogy-8ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Paperlogy-8ExtraBold.ttf"; sourceTree = "<group>"; };
 		DDE0C59251108B47EA9D20C6 /* PocketVoiceApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketVoiceApp.swift; sourceTree = "<group>"; };
 		E95448F2D18C58BB9DC49D9D /* Cafe24Nyangi-B-v1.0.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Cafe24Nyangi-B-v1.0.otf"; sourceTree = "<group>"; };
@@ -103,6 +110,7 @@
 		F67416F196D2B54588A814B1 /* Paperlogy-5Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Paperlogy-5Medium.ttf"; sourceTree = "<group>"; };
 		FB719E96D3760289663BFE93 /* Paperlogy-2ExtraLight.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Paperlogy-2ExtraLight.ttf"; sourceTree = "<group>"; };
 		FD177EEE080A85C645CD2066 /* PocketVoiceWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PocketVoiceWidgetExtension.entitlements; sourceTree = "<group>"; };
+		FE2B6826D42D2248DDF4EF75 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -151,6 +159,7 @@
 				B3985ED2BB1129BB3307F440 /* Info.plist */,
 				A40A5F9EE705A7DF17DFAFBC /* PocketVoiceWidget.swift */,
 				FD177EEE080A85C645CD2066 /* PocketVoiceWidgetExtension.entitlements */,
+				690D0D4B5526B0507CD73029 /* PrivacyInfo.xcprivacy */,
 				2A17BEB69E5DB4B68F1FD1B5 /* InfoPlist.strings */,
 				924A81045ACE000540A4CB0E /* Localizable.strings */,
 			);
@@ -165,6 +174,9 @@
 				7BE8758F0728D9076FD812E7 /* Info.plist */,
 				A15CAC61B8DDF10E7CC18245 /* PocketVoiceApp.entitlements */,
 				DDE0C59251108B47EA9D20C6 /* PocketVoiceApp.swift */,
+				BE4349A57F61BE4B4AD45BD5 /* PocketVoiceBackup.swift */,
+				2412966A61326009E3D7A0CB /* PocketVoicePlus.swift */,
+				FE2B6826D42D2248DDF4EF75 /* PrivacyInfo.xcprivacy */,
 				F68A77FD8F1F0319A8B58ADA /* InfoPlist.strings */,
 				C021BE90324A1BD33CE6A1F4 /* Localizable.strings */,
 			);
@@ -281,6 +293,7 @@
 				54712D19C6443B2963DC7108 /* Paperlogy-7Bold.ttf in Resources */,
 				4FA18140E3254A27C452130A /* Paperlogy-8ExtraBold.ttf in Resources */,
 				00B8319BA04FDDAA52073503 /* Paperlogy-9Black.ttf in Resources */,
+				9A0A3EA92D49FAEBED1064DA /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -302,6 +315,7 @@
 				4AA88089D90E05E93550B9E7 /* Paperlogy-7Bold.ttf in Resources */,
 				C74FF2F2404A01CB2204A111 /* Paperlogy-8ExtraBold.ttf in Resources */,
 				D0955CD562F97245CB172A07 /* Paperlogy-9Black.ttf in Resources */,
+				8EDECF04D860EFA43C0C3953 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -324,7 +338,9 @@
 			files = (
 				3A110483E24A86BC40180318 /* ContentView.swift in Sources */,
 				1D0FA2BAFFD078D8FE83C9AC /* PocketVoiceApp.swift in Sources */,
+				B3984CBFC9463752D2FC9008 /* PocketVoiceBackup.swift in Sources */,
 				70BF60AED7CB44DFD1DD862E /* PocketVoiceIntents.swift in Sources */,
+				29748A0D549F5D246A43550D /* PocketVoicePlus.swift in Sources */,
 				267D18688C0E51D528004D45 /* PocketVoiceShared.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -459,7 +475,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 2.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -523,7 +539,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 2.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
