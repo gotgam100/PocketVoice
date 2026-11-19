@@ -1,3 +1,4 @@
+import AppIntents
 import ImageIO
 import SwiftUI
 import UIKit
@@ -16,6 +17,10 @@ private extension Color {
 struct PocketVoiceEntry: TimelineEntry {
     let date: Date
     let people: [PocketVoicePerson?]
+    var playingPersonID: String? = nil
+    /// How many people are saved in the app, to tell "add someone in the app"
+    /// apart from "choose someone in Edit Widget" when the widget is empty.
+    var registeredCount: Int = 0
 }
 
 struct PocketVoiceProvider: AppIntentTimelineProvider {
@@ -30,23 +35,44 @@ struct PocketVoiceProvider: AppIntentTimelineProvider {
                     audioFileName: nil,
                     createdAt: .now
                 )
-            ]
+            ],
+            registeredCount: 1
         )
     }
 
     func snapshot(for configuration: PocketVoiceWidgetConfigurationIntent, in context: Context) async -> PocketVoiceEntry {
-        PocketVoiceEntry(date: .now, people: selectedPeople(from: configuration))
-    }
-
-    func timeline(for configuration: PocketVoiceWidgetConfigurationIntent, in context: Context) async -> Timeline<PocketVoiceEntry> {
-        Timeline(
-            entries: [PocketVoiceEntry(date: .now, people: selectedPeople(from: configuration))],
-            policy: .after(.now.addingTimeInterval(60 * 30))
+        let allPeople = PocketVoiceStore.loadPeople()
+        return PocketVoiceEntry(
+            date: .now,
+            people: selectedPeople(from: configuration, allPeople: allPeople),
+            registeredCount: allPeople.count
         )
     }
 
-    private func selectedPeople(from configuration: PocketVoiceWidgetConfigurationIntent) -> [PocketVoicePerson?] {
-        let people = PocketVoiceStore.loadPeople()
+    func timeline(for configuration: PocketVoiceWidgetConfigurationIntent, in context: Context) async -> Timeline<PocketVoiceEntry> {
+        let allPeople = PocketVoiceStore.loadPeople()
+        let people = selectedPeople(from: configuration, allPeople: allPeople)
+        let count = allPeople.count
+        var entries: [PocketVoiceEntry] = []
+
+        // While a voice plays, show a stop button until the clip ends,
+        // then switch back to play even if the app never gets to reload us.
+        if let nowPlaying = PocketVoiceShared.nowPlaying {
+            entries.append(PocketVoiceEntry(date: .now, people: people, playingPersonID: nowPlaying.personID, registeredCount: count))
+            entries.append(PocketVoiceEntry(date: nowPlaying.until, people: people, registeredCount: count))
+        } else {
+            entries.append(PocketVoiceEntry(date: .now, people: people, registeredCount: count))
+        }
+
+        return Timeline(entries: entries, policy: .after(.now.addingTimeInterval(60 * 30)))
+    }
+
+    /// People chosen in Edit Widget, in slot order. With nothing chosen yet
+    /// (a freshly added widget), fills in the app's people in their saved order.
+    private func selectedPeople(
+        from configuration: PocketVoiceWidgetConfigurationIntent,
+        allPeople people: [PocketVoicePerson]
+    ) -> [PocketVoicePerson?] {
         let slots = [
             configuration.firstPerson,
             configuration.secondPerson,
@@ -80,7 +106,8 @@ struct PocketVoiceWidgetView: View {
     var body: some View {
         let people = visiblePeople
 
-        if people.isEmpty {
+        // visiblePeople is padded with empty slots, so check what would actually show.
+        if people.allSatisfy({ $0 == nil }) {
             emptyState
         } else {
             GeometryReader { proxy in
@@ -232,9 +259,11 @@ struct PocketVoiceWidgetView: View {
             HStack {
                 Spacer()
                 if person.hasAudio {
-                    Link(destination: PocketVoiceShared.autoplayURL(for: person.id)) {
+                    // Plays in the background through the app process; the home screen stays put.
+                    Button(intent: PlayPersonVoiceIntent(person: PocketVoicePersonEntity(person: person))) {
                         playIcon(for: person, compact: compact)
                     }
+                    .buttonStyle(.plain)
                 } else {
                     playIcon(for: person, compact: compact)
                         .opacity(0.62)
@@ -245,25 +274,34 @@ struct PocketVoiceWidgetView: View {
     }
 
     private func playIcon(for person: PocketVoicePerson, compact: Bool) -> some View {
-        Image(systemName: person.hasAudio ? "play.fill" : "mic.slash.fill")
+        let isPlaying = person.hasAudio && entry.playingPersonID == person.id
+        return Image(systemName: isPlaying ? "stop.fill" : (person.hasAudio ? "play.fill" : "mic.slash.fill"))
             .font(compact ? .caption : (family == .systemMedium ? .headline : .headline))
             .foregroundStyle(person.hasAudio ? Color(hex: 0xEF2B24) : Color(hex: 0xEF2B24).opacity(0.58))
             .frame(width: compact ? 36 : (family == .systemMedium ? 46 : 42), height: compact ? 36 : (family == .systemMedium ? 46 : 42))
             .background(.white.opacity(person.hasAudio ? 0.98 : 0.7), in: Circle())
             .overlay(Circle().stroke(.white.opacity(0.72), lineWidth: 1))
-            .accessibilityLabel(person.hasAudio ? "재생" : "녹음 필요")
+            .accessibilityLabel(playIconLabel(hasAudio: person.hasAudio, isPlaying: isPlaying))
+    }
+
+    private func playIconLabel(hasAudio: Bool, isPlaying: Bool) -> String {
+        if PocketVoiceShared.isEnglish {
+            return isPlaying ? "Stop" : (hasAudio ? "Play" : "Recording needed")
+        }
+        return isPlaying ? "정지" : (hasAudio ? "재생" : "녹음 필요")
     }
 
     private var emptyState: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "person.crop.circle.badge.plus")
-                .font(.system(size: 32))
-            Text(widgetEmptyMessage)
-                .font(.custom("Paperlogy-6SemiBold", size: 12))
-                .lineLimit(2)
-                .minimumScaleFactor(0.78)
+        let needsPeopleInApp = entry.registeredCount == 0
+        return VStack(spacing: family == .systemSmall ? 8 : 10) {
+            Image(systemName: needsPeopleInApp ? "person.crop.circle.badge.plus" : "hand.tap.fill")
+                .font(.system(size: family == .systemSmall ? 28 : 32))
+            Text(needsPeopleInApp ? addInAppMessage : editWidgetMessage)
+                .font(.custom("Paperlogy-6SemiBold", size: family == .systemSmall ? 12 : 14))
+                .lineLimit(4)
+                .minimumScaleFactor(0.75)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 18)
+                .padding(.horizontal, family == .systemSmall ? 12 : 24)
         }
         .foregroundStyle(Color(hex: 0x3A2500))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -272,8 +310,18 @@ struct PocketVoiceWidgetView: View {
         }
     }
 
-    private var widgetEmptyMessage: String {
-        PocketVoiceShared.languageRawValue == "en" ? "Select people to add to the widget." : "위젯에 등록할 인물을 선택해주세요."
+    /// No one saved in the app yet.
+    private var addInAppMessage: String {
+        PocketVoiceShared.isEnglish
+            ? "Tap to add a person in Pocket Voice."
+            : "눌러서 앱에서 인물을 먼저 등록해주세요."
+    }
+
+    /// People exist, but none is chosen for the visible slots.
+    private var editWidgetMessage: String {
+        PocketVoiceShared.isEnglish
+            ? "Touch and hold the widget, then choose people in Edit Widget."
+            : "위젯을 길게 눌러 '위젯 편집'에서 인물을 선택해주세요."
     }
 
     private var blankTile: some View {

@@ -16,17 +16,6 @@
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLName</key>
-			<string>com.baekmac.pocketvoice.autoplay</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>pocketvoice</string>
-			</array>
-		</dict>
-	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
@@ -43,6 +32,10 @@
 		<string>Paperlogy-7Bold.ttf</string>
 		<string>ChangwonDangamAsac-Bold_0712.otf</string>
 		<string>Cafe24Nyangi-B-v1.0.ttf</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
