@@ -33,10 +33,6 @@ private extension Color {
     static let pocketvoiceInk = Color(hex: 0x3A2500)
     static let pocketvoiceBlue = Color(hex: 0xEF2B24)
     static let pocketvoiceMuted = Color(hex: 0x8A6A1F)
-    static let pocketvoiceCard = Color(hex: 0xFFF9D9)
-    static let pocketvoiceYellow = Color(hex: 0xFFD400)
-    static let pocketvoiceDeepYellow = Color(hex: 0xF5A900)
-    static let pocketvoicePocket = Color(hex: 0xFFC928)
     static let pocketvoiceRed = Color(hex: 0xEF2B24)
     static let pocketvoiceRedDeep = Color(hex: 0xC91518)
 }
@@ -138,32 +134,31 @@ private enum PersonEditorRoute: Identifiable {
 }
 
 struct ContentView: View {
-    @EnvironmentObject private var appModel: PocketVoiceAppModel
     @State private var people = PocketVoiceStore.loadPeople()
     @State private var editorRoute: PersonEditorRoute?
-    @State private var status = ""
     @State private var isPlaying = false
     @State private var playingPersonID: String?
     @State private var playbackResetWorkItem: DispatchWorkItem?
-    @State private var handledAutoplayRequestID: UUID?
     @State private var isShowingAppSettings = false
+    // Reordering: the row being dragged, how far the finger has moved, and
+    // where that row started, so it can stay under the finger while others move.
+    @State private var draggingID: String?
+    @State private var dragTranslation: CGFloat = 0
+    @State private var dragStartIndex = 0
+    @State private var rowPitch: CGFloat = 98
+    @State private var reorderSwaps = 0
+    @State private var photoRevision = 0
+    // Only one row shows a swipe action (pin on the left, delete on the right) at a time.
+    @State private var openSwipe: OpenRowSwipe?
     @AppStorage(PocketVoiceShared.languageKey) private var languageRaw = AppLanguage.korean.rawValue
+
+    private let rowSpacing: CGFloat = 12
 
     var body: some View {
         NavigationStack {
             ZStack {
                 AppBackgroundImage()
-
-                if appModel.isShowingMiniPlayer {
-                    MiniPlayerView(
-                        person: selectedPerson,
-                        isPlaying: isPlaying,
-                        onPlayToggle: toggleSelectedPersonPlayback,
-                        onClose: closeMiniPlayerAndStop
-                    )
-                } else {
-                    homeView
-                }
+                homeView
             }
             .toolbar(.hidden, for: .navigationBar)
             .sheet(item: $editorRoute) { route in
@@ -176,16 +171,8 @@ struct ContentView: View {
             }
             .onAppear {
                 reloadPeople()
-                handlePendingAutoplayIfNeeded()
-            }
-            .onChange(of: appModel.autoplayRequestID) { _, _ in
-                handlePendingAutoplayIfNeeded()
             }
         }
-    }
-
-    private var selectedPerson: PocketVoicePerson? {
-        PocketVoiceStore.person(id: appModel.selectedPersonID) ?? PocketVoiceStore.defaultPerson()
     }
 
     private var homeView: some View {
@@ -225,19 +212,27 @@ struct ContentView: View {
                     emptyView
                 } else {
                     ScrollView {
-                        LazyVStack(spacing: 12) {
+                        VStack(spacing: rowSpacing) {
                             ForEach(people) { person in
-                            PersonRow(person: person, isPlaying: playingPersonID == person.id) {
-                                toggleListPlayback(person)
-                            } onOpen: {
-                                editorRoute = .edit(person)
-                            } onDelete: {
-                                deletePerson(person)
-                            } onReorder: { person, step in
-                                movePerson(person, by: step)
-                            } onReorderEnd: {
-                                commitVisibleOrder()
-                            }
+                                PersonRow(
+                                    person: person,
+                                    isPlaying: playingPersonID == person.id,
+                                    isDragging: draggingID == person.id,
+                                    dragOffset: draggingID == person.id ? draggedRowOffset : 0,
+                                    photoRevision: photoRevision,
+                                    openSide: swipeBinding(for: person),
+                                    onPlay: { toggleListPlayback(person) },
+                                    onOpen: { editorRoute = .edit(person) },
+                                    onDelete: { deletePerson(person) },
+                                    onTogglePin: { togglePin(person) },
+                                    onReorderChanged: { reorderChanged(person, translation: $0) },
+                                    onReorderEnded: reorderEnded
+                                )
+                                .zIndex(draggingID == person.id ? 1 : 0)
+                                .transition(.asymmetric(insertion: .identity, removal: .opacity.combined(with: .scale(scale: 0.92))))
+                                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                                    rowPitch = height + rowSpacing
+                                }
                             }
 
                             Text(AppText.value(.widgetPrompt, language: languageRaw))
@@ -250,8 +245,12 @@ struct ContentView: View {
                                 .padding(.top, 10)
                         }
                         .padding(.horizontal, 16)
+                        .padding(.top, 6)
                         .padding(.bottom, 104)
                     }
+                    .scrollDisabled(draggingID != nil)
+                    .sensoryFeedback(.selection, trigger: reorderSwaps)
+                    .sensoryFeedback(.impact(weight: .light), trigger: draggingID) { _, new in new != nil }
                 }
             }
 
@@ -298,17 +297,84 @@ struct ContentView: View {
 
     private func reloadPeople() {
         people = PocketVoiceStore.loadPeople()
+        // Photos keep the same file name when edited, so bump this to make
+        // the list redraw thumbnails from disk.
+        photoRevision += 1
         WidgetCenter.shared.reloadAllTimelines()
     }
 
-    private func movePerson(_ person: PocketVoicePerson, by step: Int) {
-        guard step != 0, let currentIndex = people.firstIndex(of: person) else { return }
-        let targetIndex = min(max(currentIndex + step, 0), people.count - 1)
-        guard targetIndex != currentIndex else { return }
+    /// The dragged row's offset from its current slot, so it stays under the finger
+    /// even after it has already swapped places with neighbors.
+    private var draggedRowOffset: CGFloat {
+        guard let draggingID, let index = people.firstIndex(where: { $0.id == draggingID }) else { return 0 }
+        return dragTranslation - CGFloat(index - dragStartIndex) * rowPitch
+    }
 
-        withAnimation(.spring(response: 0.24, dampingFraction: 0.86)) {
-            let item = people.remove(at: currentIndex)
-            people.insert(item, at: targetIndex)
+    private func swipeBinding(for person: PocketVoicePerson) -> Binding<RowSwipeSide?> {
+        Binding(
+            get: { openSwipe?.id == person.id ? openSwipe?.side : nil },
+            set: { side in
+                if let side {
+                    openSwipe = OpenRowSwipe(id: person.id, side: side)
+                } else if openSwipe?.id == person.id {
+                    openSwipe = nil
+                }
+            }
+        )
+    }
+
+    /// Pins to the very top, or unpins to just below the remaining pinned people.
+    private func togglePin(_ person: PocketVoicePerson) {
+        guard let index = people.firstIndex(where: { $0.id == person.id }) else { return }
+        var reordered = people
+        var moved = reordered.remove(at: index)
+        moved.isPinned.toggle()
+        let destination = moved.isPinned ? 0 : reordered.filter(\.isPinned).count
+        reordered.insert(moved, at: destination)
+
+        withAnimation(.spring(response: 0.36, dampingFraction: 0.86)) {
+            openSwipe = nil
+            people = reordered
+        }
+        commitVisibleOrder()
+    }
+
+    private func reorderChanged(_ person: PocketVoicePerson, translation: CGFloat) {
+        guard let currentIndex = people.firstIndex(where: { $0.id == person.id }) else { return }
+
+        if draggingID == nil {
+            withAnimation(.spring(response: 0.22, dampingFraction: 0.8)) {
+                openSwipe = nil
+                draggingID = person.id
+            }
+            dragStartIndex = currentIndex
+        }
+        dragTranslation = translation
+
+        // Swap as soon as the row passes the middle of its neighbor. Pinned and
+        // unpinned people each reorder only within their own group.
+        let pinnedCount = people.filter(\.isPinned).count
+        let range = person.isPinned ? 0...(pinnedCount - 1) : pinnedCount...(people.count - 1)
+        let targetIndex = min(max(dragStartIndex + Int((translation / rowPitch).rounded()), range.lowerBound), range.upperBound)
+        guard targetIndex != currentIndex else { return }
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.86)) {
+            people.move(
+                fromOffsets: IndexSet(integer: currentIndex),
+                toOffset: targetIndex > currentIndex ? targetIndex + 1 : targetIndex
+            )
+        }
+        reorderSwaps += 1
+    }
+
+    private func reorderEnded() {
+        guard draggingID != nil else { return }
+        let changed = people.firstIndex(where: { $0.id == draggingID }) != dragStartIndex
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
+            draggingID = nil
+            dragTranslation = 0
+        }
+        if changed {
+            commitVisibleOrder()
         }
     }
 
@@ -327,30 +393,18 @@ struct ContentView: View {
 
     private func deletePerson(_ person: PocketVoicePerson) {
         do {
+            if playingPersonID == person.id {
+                stopPlayback()
+            }
             try PocketVoiceStore.delete(person)
-            reloadPeople()
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+                openSwipe = nil
+                people.removeAll { $0.id == person.id }
+            }
+            WidgetCenter.shared.reloadAllTimelines()
         } catch {
             PocketVoiceShared.appendLog("Delete failed: \(error.localizedDescription)")
         }
-    }
-
-    private func handlePendingAutoplayIfNeeded() {
-        guard let requestID = appModel.autoplayRequestID else {
-            return
-        }
-        guard handledAutoplayRequestID != requestID else {
-            return
-        }
-        handledAutoplayRequestID = requestID
-        playSelectedPerson()
-    }
-
-    private func playSelectedPerson() {
-        play(personID: selectedPerson?.id)
-    }
-
-    private func toggleSelectedPersonPlayback() {
-        togglePlayback(personID: selectedPerson?.id)
     }
 
     private func toggleListPlayback(_ person: PocketVoicePerson) {
@@ -367,14 +421,14 @@ struct ContentView: View {
     }
 
     private func play(personID: String?) {
-        do {
-            let duration = try PocketVoiceAudioPlayback.play(personID: personID)
-            status = "playing"
-            pulsePlaying(personID: personID, duration: duration)
-        } catch {
-            status = error.localizedDescription
-            stopPlayback()
-            PocketVoiceShared.appendLog("Playback failed: \(error.localizedDescription)")
+        Task {
+            do {
+                let duration = try await PocketVoiceAudioPlayback.play(personID: personID)
+                pulsePlaying(personID: personID, duration: duration)
+            } catch {
+                stopPlayback()
+                PocketVoiceShared.appendLog("Playback failed: \(error.localizedDescription)")
+            }
         }
     }
 
@@ -401,141 +455,331 @@ struct ContentView: View {
         playingPersonID = nil
         isPlaying = false
     }
+}
 
-    private func closeMiniPlayerAndStop() {
-        stopPlayback()
-        appModel.closeMiniPlayer()
+private enum RowSwipeSide: Equatable {
+    case pin
+    case delete
+}
+
+private struct OpenRowSwipe: Equatable {
+    let id: String
+    let side: RowSwipeSide
+}
+
+/// Sideways swipe on a card that never blocks the list's vertical scrolling.
+/// On iOS 18+ it uses a UIKit pan that only starts when the finger moves clearly
+/// sideways, so up/down drags go straight to the scroll view.
+private struct HorizontalSwipeModifier: ViewModifier {
+    let isEnabled: Bool
+    let onChanged: (CGFloat) -> Void
+    let onEnded: (_ predictedEnd: CGFloat) -> Void
+
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.gesture(
+                HorizontalPanGesture(isEnabled: isEnabled, onChanged: onChanged, onEnded: onEnded)
+            )
+        } else {
+            content.simultaneousGesture(
+                DragGesture(minimumDistance: 12, coordinateSpace: .global)
+                    .onChanged { value in
+                        guard isEnabled, abs(value.translation.width) > abs(value.translation.height) * 1.4 else { return }
+                        onChanged(value.translation.width)
+                    }
+                    .onEnded { value in
+                        guard isEnabled else { return }
+                        let sideways = abs(value.translation.width) > abs(value.translation.height) * 1.4
+                        onEnded(sideways ? value.predictedEndTranslation.width : 0)
+                    }
+            )
+        }
+    }
+}
+
+@available(iOS 18.0, *)
+private struct HorizontalPanGesture: UIGestureRecognizerRepresentable {
+    let isEnabled: Bool
+    let onChanged: (CGFloat) -> Void
+    let onEnded: (_ predictedEnd: CGFloat) -> Void
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator {
+        Coordinator()
+    }
+
+    func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
+        let recognizer = UIPanGestureRecognizer()
+        recognizer.delegate = context.coordinator
+        return recognizer
+    }
+
+    func updateUIGestureRecognizer(_ recognizer: UIPanGestureRecognizer, context: Context) {
+        recognizer.isEnabled = isEnabled
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: UIPanGestureRecognizer, context: Context) {
+        // Window coordinates: the card moves under the finger, so its own
+        // coordinates would shift while swiping and cause shaking.
+        let translation = recognizer.translation(in: nil).x
+        switch recognizer.state {
+        case .changed:
+            onChanged(translation)
+        case .ended:
+            let velocity = recognizer.velocity(in: nil).x
+            onEnded(translation + velocity * 0.15)
+        case .cancelled, .failed:
+            onEnded(translation)
+        default:
+            break
+        }
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        /// Start only for a clearly sideways move; anything else is scrolling.
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard let pan = gestureRecognizer as? UIPanGestureRecognizer else { return true }
+            let velocity = pan.velocity(in: nil)
+            return abs(velocity.x) > abs(velocity.y) * 1.4
+        }
     }
 }
 
 private struct PersonRow: View {
     let person: PocketVoicePerson
     let isPlaying: Bool
+    let isDragging: Bool
+    let dragOffset: CGFloat
+    let photoRevision: Int
+    @Binding var openSide: RowSwipeSide?
     let onPlay: () -> Void
     let onOpen: () -> Void
     let onDelete: () -> Void
-    let onReorder: (PocketVoicePerson, Int) -> Void
-    let onReorderEnd: () -> Void
-    @State private var horizontalOffset: CGFloat = 0
-    @State private var dragYOffset: CGFloat = 0
-    @State private var isReordering = false
+    let onTogglePin: () -> Void
+    let onReorderChanged: (CGFloat) -> Void
+    let onReorderEnded: () -> Void
+
+    /// Live horizontal finger movement while swiping to reveal an action.
+    @State private var swipeTranslation: CGFloat = 0
 
     private let cardYellow = Color(hex: 0xFFD13A)
     private let cardDeepYellow = Color(hex: 0xF2A900)
     private let cardRed = Color(hex: 0xEF2B24)
+    private let deleteRed = Color(hex: 0xE11D48)
+    private let pinOrange = Color(hex: 0xFF7A00)
+    private let actionWidth: CGFloat = 88
 
-    var body: some View {
-        ZStack(alignment: .trailing) {
-            Button(role: .destructive, action: onDelete) {
-                Image(systemName: "trash.fill")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 76, height: 72)
-                    .background(Color(hex: 0xE11D48), in: RoundedRectangle(cornerRadius: 20))
-            }
-            .buttonStyle(.plain)
-            .opacity(isReordering ? 0 : 1)
-
-            HStack(spacing: 13) {
-                HStack(spacing: 13) {
-                    PersonThumbnail(person: person, size: 62, radius: 16)
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(spacing: 7) {
-                            Image(systemName: person.category.symbol)
-                                .font(.caption)
-                                .foregroundStyle(Color.pocketvoiceInk.opacity(0.62))
-                            Text(person.name)
-                                .font(PocketVoiceFont.rounded(17, weight: .semibold))
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.82)
-                                .layoutPriority(1)
-                        }
-                        .foregroundStyle(Color.pocketvoiceInk)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    onOpen()
-                }
-
-                Button(action: onPlay) {
-                    Image(systemName: isPlaying ? "stop.fill" : "play.fill")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 42, height: 42)
-                        .background(cardRed, in: Circle())
-                        .overlay(Circle().stroke(.white.opacity(0.58), lineWidth: 1))
-                        .shadow(color: Color.black.opacity(0.16), radius: 10, y: 5)
-                }
-                .buttonStyle(.plain)
-                .disabled(!person.hasAudio)
-                .opacity(person.hasAudio ? 1 : 0.35)
-
-                Image(systemName: "line.3.horizontal")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(Color.pocketvoiceInk.opacity(0.54))
-                    .frame(width: 34, height: 42)
-                    .contentShape(Rectangle())
-                    .highPriorityGesture(reorderGesture)
-            }
-            .padding(.vertical, 12)
-            .padding(.leading, 14)
-            .padding(.trailing, 8)
-            .background(
-                LinearGradient(
-                    colors: [cardYellow, cardDeepYellow],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ),
-                in: RoundedRectangle(cornerRadius: 20)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(.white.opacity(0.36), lineWidth: 1)
-            }
-            .shadow(color: Color(hex: 0xB97B00).opacity(0.22), radius: 18, y: 8)
-            .offset(x: horizontalOffset)
-            .gesture(
-                DragGesture(minimumDistance: 18)
-                    .onChanged { value in
-                        guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                        horizontalOffset = max(min(value.translation.width, 0), -86)
-                    }
-                    .onEnded { value in
-                        withAnimation(.spring(response: 0.25, dampingFraction: 0.86)) {
-                            horizontalOffset = value.translation.width < -42 ? -86 : 0
-                        }
-                    }
-            )
+    private var restingOffset: CGFloat {
+        switch openSide {
+        case .pin: actionWidth
+        case .delete: -actionWidth
+        case nil: 0
         }
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .offset(y: dragYOffset * 0.16)
     }
 
-    private var reorderGesture: some Gesture {
-        DragGesture(minimumDistance: 8)
-            .onChanged { value in
-                guard abs(value.translation.height) >= abs(value.translation.width) else { return }
-                isReordering = true
-                horizontalOffset = 0
-                dragYOffset = value.translation.height
-            }
-            .onEnded { value in
-                let rowDistance: CGFloat = 86
-                let step = Int((value.translation.height / rowDistance).rounded(.toNearestOrAwayFromZero))
+    /// Where the card sits: follows the finger, with a soft stop past each button.
+    /// With one side open, the card can only travel back to the center; the
+    /// other side opens only with a new swipe from the closed position.
+    private var cardOffset: CGFloat {
+        var raw = restingOffset + swipeTranslation
+        switch openSide {
+        case .delete: raw = min(raw, 0)
+        case .pin: raw = max(raw, 0)
+        case nil: break
+        }
+        if raw > actionWidth {
+            return actionWidth + (raw - actionWidth) * 0.3
+        }
+        if raw < -actionWidth {
+            return -actionWidth + (raw + actionWidth) * 0.3
+        }
+        return raw
+    }
 
-                withAnimation(.spring(response: 0.22, dampingFraction: 0.9)) {
-                    dragYOffset = 0
-                }
-                isReordering = false
+    private let actionGap: CGFloat = 8
 
-                if step != 0 {
-                    onReorder(person, step)
-                    onReorderEnd()
+    /// Each action button is exactly as wide as the space the card has moved
+    /// out of (minus a small gap), so the card and button never overlap or fade.
+    private var pinButtonWidth: CGFloat {
+        max(cardOffset - actionGap, 0)
+    }
+
+    private var deleteButtonWidth: CGFloat {
+        max(-cardOffset - actionGap, 0)
+    }
+
+    var body: some View {
+        ZStack {
+            card
+                .offset(x: cardOffset)
+            // In front of the card, so the card's shadow never dims the buttons.
+            HStack(spacing: 0) {
+                pinButton
+                Spacer(minLength: 0)
+                deleteButton
+            }
+        }
+        .scaleEffect(isDragging ? 1.03 : 1)
+        .shadow(color: Color(hex: 0x7A4B00).opacity(isDragging ? 0.28 : 0), radius: 22, y: 14)
+        .offset(y: dragOffset)
+    }
+
+    private var deleteButton: some View {
+        Button(action: onDelete) {
+            VStack(spacing: 4) {
+                Image(systemName: "trash.fill")
+                    .font(.system(size: 18, weight: .bold))
+                Text(PocketVoiceShared.isEnglish ? "Delete" : "삭제")
+                    .font(PocketVoiceFont.rounded(12, weight: .bold))
+            }
+            .foregroundStyle(.white)
+            .fixedSize()
+            .frame(width: deleteButtonWidth)
+            .frame(maxHeight: .infinity)
+            .background(deleteRed)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+        }
+        .buttonStyle(.plain)
+        .allowsHitTesting(openSide == .delete)
+        .accessibilityHidden(openSide != .delete)
+    }
+
+    private var pinButton: some View {
+        Button(action: onTogglePin) {
+            VStack(spacing: 4) {
+                Image(systemName: person.isPinned ? "pin.slash.fill" : "pin.fill")
+                    .font(.system(size: 18, weight: .bold))
+                Text(pinTitle)
+                    .font(PocketVoiceFont.rounded(12, weight: .bold))
+            }
+            .foregroundStyle(.white)
+            .fixedSize()
+            .frame(width: pinButtonWidth)
+            .frame(maxHeight: .infinity)
+            .background(pinOrange)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+        }
+        .buttonStyle(.plain)
+        .allowsHitTesting(openSide == .pin)
+        .accessibilityHidden(openSide != .pin)
+    }
+
+    private var pinTitle: String {
+        if PocketVoiceShared.isEnglish {
+            return person.isPinned ? "Unpin" : "Favorite"
+        }
+        return person.isPinned ? "해제" : "최애"
+    }
+
+    private var card: some View {
+        HStack(spacing: 13) {
+            HStack(spacing: 13) {
+                PersonThumbnail(person: person, size: 62, radius: 16)
+                    .id(photoRevision)
+
+                HStack(spacing: 7) {
+                    Image(systemName: person.category.symbol)
+                        .font(.caption)
+                        .foregroundStyle(Color.pocketvoiceInk.opacity(0.62))
+                    Text(person.name)
+                        .font(PocketVoiceFont.rounded(17, weight: .semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
+                        .layoutPriority(1)
+                    if person.isPinned {
+                        Image(systemName: "pin.fill")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(cardRed)
+                            .rotationEffect(.degrees(35))
+                            .accessibilityLabel(PocketVoiceShared.isEnglish ? "Pinned" : "최애 고정")
+                    }
+                }
+                .foregroundStyle(Color.pocketvoiceInk)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if openSide != nil {
+                    closeSwipe()
+                } else {
+                    onOpen()
                 }
             }
+
+            Button(action: onPlay) {
+                Image(systemName: isPlaying ? "stop.fill" : "play.fill")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 42, height: 42)
+                    .background(cardRed, in: Circle())
+                    .overlay(Circle().stroke(.white.opacity(0.58), lineWidth: 1))
+                    .shadow(color: Color.black.opacity(0.16), radius: 10, y: 5)
+            }
+            .buttonStyle(.plain)
+            .disabled(!person.hasAudio)
+            .opacity(person.hasAudio ? 1 : 0.35)
+
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Color.pocketvoiceInk.opacity(isDragging ? 0.85 : 0.54))
+                .frame(width: 40, height: 62)
+                .contentShape(Rectangle())
+                // Global space: the row itself moves while dragging, so local
+                // coordinates would shift under the finger and cause jitter.
+                .highPriorityGesture(
+                    DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                        .onChanged { onReorderChanged($0.translation.height) }
+                        .onEnded { _ in onReorderEnded() }
+                )
+                .accessibilityLabel(PocketVoiceShared.isEnglish ? "Reorder" : "순서 변경")
+        }
+        .padding(.vertical, 12)
+        .padding(.leading, 14)
+        .padding(.trailing, 6)
+        .background(
+            LinearGradient(
+                colors: [cardYellow, cardDeepYellow],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: 20)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(.white.opacity(0.36), lineWidth: 1)
+        }
+        .shadow(color: Color(hex: 0xB97B00).opacity(0.22), radius: 18, y: 8)
+        .modifier(HorizontalSwipeModifier(
+            isEnabled: !isDragging,
+            onChanged: { swipeTranslation = $0 },
+            onEnded: finishSwipe
+        ))
+    }
+
+    /// `predictedEnd` is where the swipe was heading, so a quick flick also opens or closes.
+    private func finishSwipe(predictedEnd: CGFloat) {
+        let projected = restingOffset + predictedEnd
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+            switch openSide {
+            case .delete:
+                // Stay open or close; never jump straight to the pin side.
+                openSide = projected < -actionWidth / 2 ? .delete : nil
+            case .pin:
+                openSide = projected > actionWidth / 2 ? .pin : nil
+            case nil:
+                if projected < -actionWidth / 2 {
+                    openSide = .delete
+                } else if projected > actionWidth / 2 {
+                    openSide = .pin
+                }
+            }
+            swipeTranslation = 0
+        }
+    }
+
+    private func closeSwipe() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.86)) {
+            openSide = nil
+        }
     }
 }
 
@@ -543,6 +787,8 @@ private struct AppSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @AppStorage(PocketVoiceShared.languageKey) private var languageRaw = AppLanguage.korean.rawValue
+    // Stored in the shared App Group defaults so widget playback uses it too.
+    @AppStorage(PocketVoiceShared.volumeKey, store: PocketVoiceShared.sharedDefaults) private var appVolume = 1.0
 
     private var currentLanguage: AppLanguage {
         AppLanguage(rawValue: languageRaw) ?? .korean
@@ -557,7 +803,9 @@ private struct AppSettingsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     VStack(alignment: .leading, spacing: 7) {
-                        Text("Pocket Voice")
+                        // Same as the main screen title. A plain Text("Pocket Voice") was
+                        // translated by the iPhone's system language, not the app's language.
+                        Text(AppText.value(.appName, language: languageRaw))
                             .font(PocketVoiceFont.appTitle(36))
                             .foregroundStyle(Color.pocketvoiceInk)
                         Text(AppText.value(.tagline, language: languageRaw))
@@ -580,10 +828,14 @@ private struct AppSettingsView: View {
                     }
 
                     settingsSection {
+                        volumeControl
+                    }
+
+                    settingsSection {
                         VStack(spacing: 0) {
                             settingsRow(
                                 title: AppText.value(.appInfo, language: languageRaw),
-                                value: currentLanguage == .korean ? "Pocket Voice" : "Pocket Voice",
+                                value: "Pocket Voice",
                                 systemImage: "info.circle.fill"
                             )
 
@@ -600,6 +852,15 @@ private struct AppSettingsView: View {
                                 .padding(.leading, 34)
 
                             policyLinkRow
+
+                            Divider()
+                                .padding(.leading, 34)
+
+                            linkRow(
+                                title: currentLanguage == .korean ? "개발자의 다른 앱" : "More Apps by Developer",
+                                systemImage: "square.grid.2x2.fill",
+                                url: developerAppsURL
+                            )
                         }
                     }
                 }
@@ -617,6 +878,46 @@ private struct AppSettingsView: View {
                     }
                 }
             }
+        }
+    }
+
+    private var volumeControl: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(currentLanguage == .korean ? "앱 볼륨" : "App Volume")
+                    .font(PocketVoiceFont.rounded(15, weight: .bold))
+                    .foregroundStyle(Color.pocketvoiceInk)
+                Spacer()
+                Text("\(Int((appVolume * 100).rounded()))%")
+                    .font(PocketVoiceFont.rounded(15, weight: .semibold))
+                    .foregroundStyle(Color.pocketvoiceMuted)
+                    .monospacedDigit()
+            }
+
+            HStack(spacing: 12) {
+                Image(systemName: appVolume == 0 ? "speaker.slash.fill" : "speaker.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.pocketvoiceBlue)
+                    .frame(width: 20)
+                Slider(value: $appVolume, in: 0...1, step: 0.05)
+                    .tint(Color.pocketvoiceBlue)
+                    .accessibilityLabel(currentLanguage == .korean ? "앱 볼륨" : "App Volume")
+                    .accessibilityValue("\(Int((appVolume * 100).rounded()))%")
+                Image(systemName: "speaker.wave.3.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.pocketvoiceBlue)
+            }
+            .onChange(of: appVolume) { _, _ in
+                PocketVoiceAudioPlayback.applyVolume()
+                VoiceRecorder.applyVolume()
+            }
+
+            Text(currentLanguage == .korean
+                 ? "아이폰 볼륨을 기준으로, 앱과 위젯에서 나오는 목소리 크기를 조절해요."
+                 : "Sets how loud voices play in the app and widget, relative to your iPhone volume.")
+                .font(PocketVoiceFont.rounded(12, weight: .medium))
+                .foregroundStyle(Color.pocketvoiceInk.opacity(0.55))
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -697,6 +998,11 @@ private struct AppSettingsView: View {
         }
     }
 
+    // Seunghwa Baek's developer page; on iPhone this opens in the App Store app.
+    private var developerAppsURL: URL {
+        URL(string: "https://apps.apple.com/developer/id1892791489")!
+    }
+
     private func settingsSection<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         content()
             .padding(18)
@@ -752,6 +1058,10 @@ private struct PersonEditorView: View {
     @State private var status: String
     @State private var isPreviewPlaying = false
     @State private var previewResetWorkItem: DispatchWorkItem?
+    @State private var isSaving = false
+    @FocusState private var isNameFocused: Bool
+    @State private var savedLevels: [Float] = []
+    @State private var previewStartedAt: Date?
 
     private var accent: Color {
         Color.pocketvoiceRed
@@ -776,6 +1086,12 @@ private struct PersonEditorView: View {
             ZStack {
                 AppBackgroundImage()
 
+                // Tapping any empty spot (around or below the form) hides the keyboard.
+                Color.clear
+                    .contentShape(Rectangle())
+                    .ignoresSafeArea()
+                    .onTapGesture { isNameFocused = false }
+
                 ScrollView {
                     VStack(spacing: 18) {
                         editorHeader
@@ -785,7 +1101,14 @@ private struct PersonEditorView: View {
                         recorderPanel
                     }
                     .padding(22)
+                    .frame(maxWidth: .infinity)
+                    .background {
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onTapGesture { isNameFocused = false }
+                    }
                 }
+                .scrollDismissesKeyboard(.immediately)
                 .disabled(isShowingPhotoCropper)
 
                 if isShowingPhotoCropper, let cropImage {
@@ -817,8 +1140,13 @@ private struct PersonEditorView: View {
             }
             .onChange(of: recorder.isRecording) { _, isRecording in
                 if !isRecording, recorder.lastRecordedURL != nil {
-                    audioFileName = recorder.lastRecordedURL?.lastPathComponent
                     status = text(.recorded)
+                }
+            }
+            .onDisappear(perform: cleanUpOnClose)
+            .task {
+                if let audioFileName {
+                    savedLevels = await VoiceWaveform.levels(for: PocketVoiceStore.fileURL(audioFileName))
                 }
             }
             .onAppear {
@@ -863,7 +1191,7 @@ private struct PersonEditorView: View {
                     )
             }
             .buttonStyle(.plain)
-            .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
         }
         .shadow(color: Color(hex: 0x001A44).opacity(0.18), radius: 14, y: 7)
     }
@@ -963,6 +1291,8 @@ private struct PersonEditorView: View {
                 .textInputAutocapitalization(.never)
                 .foregroundStyle(Color.pocketvoiceInk)
                 .tint(accent)
+                .focused($isNameFocused)
+                .submitLabel(.done)
         }
         .padding(.vertical, 18)
         .padding(.horizontal, 22)
@@ -1017,31 +1347,25 @@ private struct PersonEditorView: View {
                     size: 78,
                     action: togglePreview
                 )
-                .disabled(audioFileName == nil && recorder.lastRecordedURL == nil)
-                .opacity(audioFileName == nil && recorder.lastRecordedURL == nil ? 0.35 : 1)
+                .disabled(!hasPlayableVoice)
+                .opacity(hasPlayableVoice ? 1 : 0.35)
             }
 
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(Color.white.opacity(0.22))
-                    Capsule()
-                        .fill(Color.white)
-                        .frame(width: proxy.size.width * min(recorder.elapsed / 10.0, 1.0))
-                }
+            TimelineView(.animation(paused: !isPreviewPlaying)) { context in
+                VoiceWaveformView(
+                    levels: waveformLevels,
+                    highlightedCount: highlightedBarCount(at: context.date)
+                )
             }
-            .frame(height: 12)
+            .frame(height: 48)
             .padding(.horizontal, 4)
+            .accessibilityHidden(true)
 
-            HStack(spacing: 8) {
-                Image(systemName: recorder.isRecording ? "waveform" : "checkmark.seal.fill")
-                Text(status)
-                    .font(PocketVoiceFont.rounded(13, weight: .semibold))
-            }
-            .foregroundStyle(recorder.isRecording ? Color(hex: 0xEF4444) : accent)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 9)
-            .background(Color.white, in: Capsule())
+            // A quiet hint under the waveform, not a button-like pill.
+            Text(status)
+                .font(PocketVoiceFont.rounded(12, weight: .medium))
+                .foregroundStyle(recorder.isRecording ? Color.pocketvoiceRedDeep : Color.pocketvoiceInk.opacity(0.55))
+                .multilineTextAlignment(.center)
         }
         .padding(.top, 10)
     }
@@ -1050,23 +1374,53 @@ private struct PersonEditorView: View {
         CGSize(width: 176, height: 176)
     }
 
+    /// The new recording if there is one, otherwise the saved voice.
+    private var waveformLevels: [Float] {
+        recorder.isRecording || recorder.lastRecordedURL != nil ? recorder.levels : savedLevels
+    }
+
+    /// While previewing, only the bars already played are bright.
+    private func highlightedBarCount(at date: Date) -> Int {
+        guard isPreviewPlaying, let previewStartedAt else { return waveformLevels.count }
+        let played = date.timeIntervalSince(previewStartedAt)
+        return Int(played / VoiceWaveform.barDuration) + 1
+    }
+
+    private var hasPlayableVoice: Bool {
+        audioFileName != nil || recorder.lastRecordedURL != nil
+    }
+
     private func toggleRecording() {
         if recorder.isRecording {
             recorder.stop()
-            audioFileName = recorder.lastRecordedURL?.lastPathComponent
             status = text(.recorded)
             return
         }
 
-        do {
-            stopPreview()
-            PocketVoiceAudioPlayback.stop()
-            let url = PocketVoiceStore.audioURL(for: draftID)
-            try recorder.start(url: url, maxDuration: 10.0)
-            audioFileName = url.lastPathComponent
-            status = text(.recording)
-        } catch {
-            status = error.localizedDescription
+        stopPreview()
+        PocketVoiceAudioPlayback.stop()
+        let url = PocketVoiceStore.draftAudioURL(for: draftID)
+        Task {
+            do {
+                try await recorder.start(url: url, maxDuration: 10.0)
+                status = text(.recording)
+            } catch {
+                status = error.localizedDescription
+            }
+        }
+    }
+
+    /// Closing the editor (saved or not) stops recording and preview, and
+    /// drops an unsaved draft recording.
+    private func cleanUpOnClose() {
+        stopPreview()
+        if recorder.isRecording {
+            recorder.stop()
+        }
+        let id = draftID
+        Task {
+            await PocketVoiceAudioSession.waitForPendingWork()
+            PocketVoiceStore.discardDraftAudio(for: id)
         }
     }
 
@@ -1080,25 +1434,31 @@ private struct PersonEditorView: View {
     }
 
     private func playPreview() {
-        do {
-            let duration: TimeInterval
-            if let url = recorder.lastRecordedURL {
-                duration = try VoiceRecorder.play(url: url)
-            } else if let audioFileName {
-                duration = try VoiceRecorder.play(url: PocketVoiceStore.fileURL(audioFileName))
-            } else {
-                return
+        let url: URL
+        if let lastRecordedURL = recorder.lastRecordedURL,
+           FileManager.default.fileExists(atPath: lastRecordedURL.path) {
+            url = lastRecordedURL
+        } else if let audioFileName {
+            url = PocketVoiceStore.fileURL(audioFileName)
+        } else {
+            return
+        }
+
+        Task {
+            do {
+                let duration = try await VoiceRecorder.play(url: url)
+                status = text(.preview)
+                pulsePreview(duration: duration)
+            } catch {
+                status = error.localizedDescription
+                stopPreview()
             }
-            status = text(.preview)
-            pulsePreview(duration: duration)
-        } catch {
-            status = error.localizedDescription
-            stopPreview()
         }
     }
 
     private func pulsePreview(duration: TimeInterval) {
         previewResetWorkItem?.cancel()
+        previewStartedAt = Date()
         isPreviewPlaying = true
 
         let reset = DispatchWorkItem {
@@ -1140,8 +1500,29 @@ private struct PersonEditorView: View {
     }
 
     private func save() {
+        guard !isSaving else { return }
+        isSaving = true
+        Task { await saveAndClose() }
+    }
+
+    @MainActor
+    private func saveAndClose() async {
+        stopPreview()
+        if recorder.isRecording {
+            recorder.stop()
+        }
+        // Let the recorder finish writing before the draft file is moved.
+        await PocketVoiceAudioSession.waitForPendingWork()
+
         do {
-            stopPreview()
+            var savedAudioFileName = audioFileName
+            if let draftURL = recorder.lastRecordedURL,
+               FileManager.default.fileExists(atPath: draftURL.path) {
+                savedAudioFileName = try PocketVoiceStore.commitDraftAudio(for: draftID)
+                // Keep it even if a later step fails and the user taps save again.
+                audioFileName = savedAudioFileName
+            }
+
             let normalizedPhotoData = photoData.flatMap { normalizedPhotoPNGData(from: $0) ?? $0 }
             let normalizedSourcePhotoData = sourcePhotoData.flatMap { normalizedPhotoPNGData(from: $0) ?? $0 }
             let savedPhotoFileName = try normalizedPhotoData.map { try PocketVoiceStore.savePhotoData($0, for: draftID) } ?? person?.photoFileName
@@ -1150,21 +1531,21 @@ private struct PersonEditorView: View {
                 id: draftID,
                 name: name.trimmingCharacters(in: .whitespacesAndNewlines),
                 category: category,
-                accent: .sky,
                 photoFileName: savedPhotoFileName,
                 sourcePhotoFileName: savedSourcePhotoFileName,
                 photoDecoration: photoDecoration,
-                audioFileName: audioFileName ?? person?.audioFileName,
+                audioFileName: savedAudioFileName,
                 createdAt: person?.createdAt ?? Date(),
-                sortOrder: person?.sortOrder ?? 0
+                sortOrder: person?.sortOrder ?? 0,
+                isPinned: person?.isPinned ?? false
             )
 
             try PocketVoiceStore.upsert(updated)
-            WidgetCenter.shared.reloadAllTimelines()
             onSave()
             dismiss()
         } catch {
             status = error.localizedDescription
+            isSaving = false
         }
     }
 
@@ -1361,23 +1742,41 @@ private struct PhotoCropperView: View {
             .frame(width: 64, height: 64)
             .contentShape(Rectangle())
             .offset(current)
-            .onTapGesture {
-                placedStickerOffsets[sticker.id] = .zero
-                paletteDragOffsets[sticker.id] = nil
-            }
+            // One gesture handles both: a drag drops the sticker where it is
+            // released, and a tap (barely any movement) places it on the photo.
+            // A separate tap gesture never fired because this drag took the touch first.
             .highPriorityGesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
                         paletteDragOffsets[sticker.id] = value.translation
                     }
                     .onEnded { value in
-                        let final = CGSize(width: sticker.base.width + value.translation.width, height: sticker.base.height + value.translation.height)
-                        if isInsideFrame(final) {
-                            placedStickerOffsets[sticker.id] = final
+                        let moved = hypot(value.translation.width, value.translation.height)
+                        if moved < 8 {
+                            withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
+                                placedStickerOffsets[sticker.id] = tapPlacement(for: sticker)
+                            }
+                        } else {
+                            let final = CGSize(width: sticker.base.width + value.translation.width, height: sticker.base.height + value.translation.height)
+                            if isInsideFrame(final) {
+                                placedStickerOffsets[sticker.id] = final
+                            }
                         }
                         paletteDragOffsets[sticker.id] = nil
                     }
             )
+    }
+
+    /// Where a tapped sticker lands: inside the photo, toward the side the
+    /// sticker sits on in the palette, so it decorates the edge instead of
+    /// covering the face in the middle.
+    private func tapPlacement(for sticker: DecorationSticker) -> CGSize {
+        let reach = frameSize / 2 * 0.68
+        let largest = max(abs(sticker.base.width), abs(sticker.base.height), 1)
+        return CGSize(
+            width: sticker.base.width / largest * reach,
+            height: sticker.base.height / largest * reach
+        )
     }
 
     private func placedStickerView(_ sticker: DecorationSticker) -> some View {
@@ -1565,23 +1964,6 @@ private extension UIImage {
     }
 }
 
-
-private extension UIImage {
-    func drawAspectFill(in rect: CGRect) {
-        let imageSize = size
-        guard imageSize.width > 0, imageSize.height > 0 else { return }
-        let scale = max(rect.width / imageSize.width, rect.height / imageSize.height)
-        let drawSize = CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
-        let drawRect = CGRect(
-            x: rect.midX - drawSize.width / 2,
-            y: rect.midY - drawSize.height / 2,
-            width: drawSize.width,
-            height: drawSize.height
-        )
-        draw(in: drawRect)
-    }
-}
-
 private struct CircleIconButton: View {
     let systemName: String
     let color: Color
@@ -1605,6 +1987,8 @@ private struct CircleIconButton: View {
 private final class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate {
     @Published var isRecording = false
     @Published var elapsed = 0.0
+    /// Loudness per waveform bar (0...1) of the current recording, filled in live.
+    @Published var levels: [Float] = []
 
     var lastRecordedURL: URL?
 
@@ -1613,19 +1997,9 @@ private final class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDe
     private var maxDuration = 10.0
     private static var player: AVAudioPlayer?
 
-    func start(url: URL, maxDuration: TimeInterval) throws {
+    @MainActor
+    func start(url: URL, maxDuration: TimeInterval) async throws {
         try PocketVoiceStore.ensureContainerExists()
-
-        let session = AVAudioSession.sharedInstance()
-        try session.setActive(false, options: [.notifyOthersOnDeactivation])
-        try session.setCategory(.record, mode: .default, options: [])
-        try session.setPreferredSampleRate(48_000)
-        try session.setPreferredIOBufferDuration(0.02)
-        try session.setActive(true)
-
-        if let builtInMic = session.availableInputs?.first(where: { $0.portType == .builtInMic }) {
-            try? session.setPreferredInput(builtInMic)
-        }
 
         let settings: [String: Any] = [
             AVFormatIDKey: kAudioFormatMPEG4AAC,
@@ -1635,19 +2009,30 @@ private final class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDe
             AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
         ]
 
-        recorder = try AVAudioRecorder(url: url, settings: settings)
-        recorder?.delegate = self
-        recorder?.prepareToRecord()
+        recorder = try await PocketVoiceAudioSession.startRecorder(
+            url: url,
+            settings: settings,
+            duration: maxDuration,
+            delegate: self
+        )
         self.maxDuration = maxDuration
         elapsed = 0
+        levels = []
         isRecording = true
         lastRecordedURL = url
-        recorder?.record(forDuration: maxDuration)
 
         timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            elapsed = min(recorder?.currentTime ?? 0, self.maxDuration)
+        // Sample the mic level often and keep the loudest value per bar.
+        timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
+            guard let self, let recorder else { return }
+            elapsed = min(recorder.currentTime, self.maxDuration)
+            recorder.updateMeters()
+            let level = VoiceWaveform.level(fromDecibels: recorder.averagePower(forChannel: 0))
+            let index = min(Int(elapsed / VoiceWaveform.barDuration), VoiceWaveform.barCount - 1)
+            while levels.count <= index {
+                levels.append(0)
+            }
+            levels[index] = max(levels[index], level)
             if elapsed >= self.maxDuration {
                 stop()
             }
@@ -1655,84 +2040,45 @@ private final class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDe
     }
 
     func stop() {
-        recorder?.stop()
+        PocketVoiceAudioSession.stopRecorder(recorder)
         recorder = nil
         timer?.invalidate()
         timer = nil
         elapsed = maxDuration
         isRecording = false
-        try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
     }
 
     func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
-        isRecording = false
-        elapsed = maxDuration
-        timer?.invalidate()
-        timer = nil
-        self.recorder = nil
-        try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
+        // May arrive off the main thread; UI state lives on main.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            isRecording = false
+            elapsed = maxDuration
+            timer?.invalidate()
+            timer = nil
+            if self.recorder === recorder {
+                self.recorder = nil
+            }
+            PocketVoiceAudioSession.deactivate()
+        }
     }
 
-    static func play(url: URL) throws -> TimeInterval {
-        let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playback, mode: .default, options: [.duckOthers])
-        try session.setActive(true)
-        player = try AVAudioPlayer(contentsOf: url)
-        player?.prepareToPlay()
-        player?.play()
-        return player?.duration ?? 0
+    @MainActor
+    static func play(url: URL) async throws -> TimeInterval {
+        PocketVoiceAudioSession.stopPlayer(player, deactivate: false)
+        player = nil
+        let newPlayer = try await PocketVoiceAudioSession.startPlayer(url: url, delegate: nil)
+        player = newPlayer
+        return newPlayer.duration
     }
 
     static func stopPlayback() {
-        player?.stop()
+        PocketVoiceAudioSession.stopPlayer(player, deactivate: player != nil)
         player = nil
     }
-}
 
-private struct MiniPlayerView: View {
-    let person: PocketVoicePerson?
-    let isPlaying: Bool
-    let onPlayToggle: () -> Void
-    let onClose: () -> Void
-    @AppStorage(PocketVoiceShared.languageKey) private var languageRaw = AppLanguage.korean.rawValue
-
-    private var accent: Color {
-        Color(hex: 0x22C55E)
-    }
-
-    var body: some View {
-        VStack(spacing: 28) {
-            Spacer()
-
-            if let person {
-                PersonThumbnail(person: person, size: 170, radius: 38)
-            } else {
-                RoundedRectangle(cornerRadius: 38)
-                    .fill(accent.opacity(0.18))
-                    .frame(width: 170, height: 170)
-            }
-
-            Text(person?.name ?? AppText.value(.appName, language: languageRaw))
-                .font(PocketVoiceFont.title(42))
-                .foregroundStyle(.white)
-
-            WaveformView(color: accent, isAnimating: isPlaying)
-                .frame(width: 118, height: 34)
-                .opacity(isPlaying ? 1 : 0.35)
-
-            HStack(spacing: 22) {
-                CircleIconButton(systemName: isPlaying ? "stop.fill" : "play.fill", color: accent, size: 62, action: onPlayToggle)
-                CircleIconButton(systemName: "xmark", color: Color(hex: 0x27272A), size: 58, action: onClose)
-            }
-
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background {
-            ZStack {
-                AppBackgroundImage()
-            }
-        }
+    static func applyVolume() {
+        player?.volume = PocketVoiceShared.playbackVolume
     }
 }
 
@@ -1766,28 +2112,73 @@ private struct AppBackgroundImage: View {
     }
 }
 
+/// Shared scale for live and file waveforms: one bar per 0.25 s, 40 bars = 10 s.
+private enum VoiceWaveform {
+    static let barDuration: TimeInterval = 0.25
+    static let barCount = 40
 
+    /// Maps dBFS (about -45 quiet ... -5 loud) to 0...1. Squaring spreads out
+    /// normal speech levels so louder and softer syllables look different.
+    static func level(fromDecibels decibels: Float) -> Float {
+        let linear = min(max((decibels + 45) / 40, 0), 1)
+        return linear * linear
+    }
 
+    /// Reads a recording and returns one loudness value per bar.
+    static func levels(for url: URL) async -> [Float] {
+        await Task.detached(priority: .utility) {
+            guard let file = try? AVAudioFile(forReading: url),
+                  let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(file.length)),
+                  (try? file.read(into: buffer)) != nil,
+                  let samples = buffer.floatChannelData?[0] else {
+                return []
+            }
 
+            let framesPerBar = max(Int(file.processingFormat.sampleRate * barDuration), 1)
+            let frameCount = Int(buffer.frameLength)
+            var result: [Float] = []
+            var start = 0
+            while start < frameCount, result.count < barCount {
+                let end = min(start + framesPerBar, frameCount)
+                var sum: Float = 0
+                for index in start..<end {
+                    sum += samples[index] * samples[index]
+                }
+                let rms = (sum / Float(end - start)).squareRoot()
+                result.append(level(fromDecibels: 20 * log10(max(rms, 0.000_001))))
+                start = end
+            }
+            return result
+        }.value
+    }
+}
 
-
-private struct WaveformView: View {
-    let color: Color
-    let isAnimating: Bool
+private struct VoiceWaveformView: View {
+    let levels: [Float]
+    let highlightedCount: Int
 
     var body: some View {
-        HStack(spacing: 5) {
-            ForEach(0..<7, id: \.self) { index in
-                Capsule()
-                    .fill(color)
-                    .frame(width: 8, height: isAnimating ? CGFloat([16, 26, 20, 32, 18, 28, 14][index]) : 12)
-                    .animation(
-                        isAnimating
-                        ? .easeInOut(duration: 0.48).repeatForever().delay(Double(index) * 0.06)
-                        : .default,
-                        value: isAnimating
-                    )
+        GeometryReader { proxy in
+            let spacing: CGFloat = 3
+            let count = VoiceWaveform.barCount
+            let barWidth = max((proxy.size.width - spacing * CGFloat(count - 1)) / CGFloat(count), 1)
+
+            HStack(alignment: .center, spacing: spacing) {
+                ForEach(0..<count, id: \.self) { index in
+                    let hasSound = index < levels.count
+                    let level = hasSound ? CGFloat(levels[index]) : 0
+                    Capsule()
+                        .fill(Color.white.opacity(barOpacity(index: index, hasSound: hasSound)))
+                        .frame(width: barWidth, height: max(proxy.size.height * level, 4))
+                        .animation(.easeOut(duration: 0.12), value: level)
+                }
             }
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
+    }
+
+    private func barOpacity(index: Int, hasSound: Bool) -> Double {
+        guard hasSound else { return 0.28 }
+        return index < highlightedCount ? 1 : 0.5
     }
 }
