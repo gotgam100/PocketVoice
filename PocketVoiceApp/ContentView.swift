@@ -951,8 +951,8 @@ private struct AppSettingsView: View {
                     isShowingPlus = true
                 } label: {
                     Text(isKorean
-                         ? "\(plus.product?.displayPrice ?? "₩1,100")에 구매하기"
-                         : "Buy for \(plus.product?.displayPrice ?? "₩1,100")")
+                         ? "\(plus.displayPrice)에 구매하기"
+                         : "Buy for \(plus.displayPrice)")
                         .font(PocketVoiceFont.rounded(15, weight: .bold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)

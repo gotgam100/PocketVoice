@@ -37,6 +37,17 @@ final class PocketVoicePlus: ObservableObject {
         return defaults.bool(forKey: purchasedKey) || defaults.bool(forKey: earlyUserKey)
     }
 
+    /// The App Store's localized price, or the Korean base price before it loads.
+    var displayPrice: String {
+        #if DEBUG
+        // Screenshots: -PocketVoiceScreenshotPrice '$0.49' shows another storefront's price.
+        if let price = UserDefaults.standard.string(forKey: "PocketVoiceScreenshotPrice") {
+            return price
+        }
+        #endif
+        return product?.displayPrice ?? "₩1,100"
+    }
+
     nonisolated static func recordingSeconds(isPlus: Bool) -> TimeInterval {
         isPlus ? plusRecordingSeconds : freeRecordingSeconds
     }
@@ -320,7 +331,7 @@ struct PocketVoicePlusView: View {
     }
 
     private var buyTitle: String {
-        let price = plus.product?.displayPrice ?? "₩1,100"
+        let price = plus.displayPrice
         return english ? "Buy for \(price)" : "\(price)에 구매하기"
     }
 

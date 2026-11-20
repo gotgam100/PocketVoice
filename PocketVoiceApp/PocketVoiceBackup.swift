@@ -51,12 +51,26 @@ enum PocketVoiceBackup {
     @MainActor private static var isSyncing = false
 
     static var isICloudSignedIn: Bool {
-        FileManager.default.ubiquityIdentityToken != nil
+        #if DEBUG
+        if isScreenshotMode { return true }
+        #endif
+        return FileManager.default.ubiquityIdentityToken != nil
     }
 
     static var lastBackupDate: Date? {
-        UserDefaults.standard.object(forKey: lastBackupKey) as? Date
+        #if DEBUG
+        if isScreenshotMode { return Date() }
+        #endif
+        return UserDefaults.standard.object(forKey: lastBackupKey) as? Date
     }
+
+    #if DEBUG
+    /// App Store screenshots on a simulator without iCloud: launch argument
+    /// -PocketVoiceScreenshotICloud YES shows Settings as if backed up just now.
+    private static var isScreenshotMode: Bool {
+        UserDefaults.standard.bool(forKey: "PocketVoiceScreenshotICloud")
+    }
+    #endif
 
     // MARK: - Backup
 
